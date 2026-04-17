@@ -129,7 +129,29 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // 1. Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
+
+        // 2. Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBI_1847xtDLdHzf18ZVAPaeQC0JyKYrVs",
+            authDomain: "mixitup-390a3.firebaseapp.com",
+            projectId: "mixitup-390a3",
+            storageBucket: "mixitup-390a3.firebasestorage.app",
+            messagingSenderId: "1088562427057",
+            appId: "1:1088562427057:web:64b7dd6a208df1968b1e90",
+            measurementId: "G-XMJ8CE6XRM"
+        };
+
+        // 3. Initialize Firebase & Firestore
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        // 4. UI Element References
         const addEventBtn = document.getElementById('add-event-btn');
         const addEventForm = document.getElementById('add-event-form');
         const submitEventBtn = document.getElementById('submit-event-btn');
@@ -143,23 +165,47 @@
             newEventText.focus();
         });
 
-        // Function to handle adding the event to the DOM
-        function submitEvent() {
+        // Function to handle adding the event to Firebase and DOM
+        async function submitEvent() {
             const text = newEventText.value.trim();
+            
             if (text) {
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td>${text}</td>
-                    <td class="right-align">--</td>
-                    <td class="right-align"></td>
-                    <td class="right-align"></td>
-                `;
-                eventList.appendChild(newRow);
+                try {
+                    // Disable button to prevent double-clicks while posting
+                    submitEventBtn.disabled = true;
 
-                // Reset state
-                newEventText.value = '';
-                addEventForm.style.display = 'none';
-                addEventBtn.style.display = 'inline-block';
+                    // Post to Firestore
+                    const docRef = await addDoc(collection(db, "events"), {
+                        date: new Date().toISOString(), // Saving as an ISO string
+                        eventDescription: text,
+                        isActive: true,
+                        rating: 0 // int64 equivalent in JS
+                    });
+                    
+                    console.log("Document written with ID: ", docRef.id);
+
+                    // Update the UI
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${text}</td>
+                        <td class="right-align">--</td>
+                        <td class="right-align"></td>
+                        <td class="right-align"></td>
+                    `;
+                    eventList.appendChild(newRow);
+
+                    // Reset state
+                    newEventText.value = '';
+                    addEventForm.style.display = 'none';
+                    addEventBtn.style.display = 'inline-block';
+                    
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    alert("Failed to save event. Check console for details.");
+                } finally {
+                    // Re-enable button
+                    submitEventBtn.disabled = false;
+                }
             }
         }
 
