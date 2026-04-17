@@ -105,16 +105,12 @@
                 <tr>
                     <th>Event description</th>
                     <th class="right-align">%Likelihood</th>
-                    <th class="right-align">good idea</th>
-                    <th class="right-align">bad idea</th>
+                    <th class="right-align">rating</th>
                 </tr>
             </thead>
             <tbody id="event-list">
                 <tr>
-                    <td>April 25th 9:00 pm, Washington Square Park</td>
-                    <td class="right-align">25%</td>
-                    <td class="right-align"></td>
-                    <td class="right-align"></td>
+                    <td colspan="3" style="text-align: center;">Loading events...</td>
                 </tr>
             </tbody>
         </table>
@@ -130,9 +126,9 @@
     </div>
 
     <script type="module">
-        // 1. Firebase Imports
+        // 1. Firebase Imports (Added getDocs, query, orderBy)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
 
         // 2. Firebase Configuration
@@ -165,34 +161,60 @@
             newEventText.focus();
         });
 
+        // Function to fetch and render events on page load
+        async function loadEvents() {
+            try {
+                // Query the events collection, sort by date newest first
+                const q = query(collection(db, "events"), orderBy("date", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                // Clear the "Loading..." text
+                eventList.innerHTML = '';
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    
+                    // Only display if the event is active
+                    if (data.isActive) {
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td>${data.eventDescription}</td>
+                            <td class="right-align">--</td>
+                            <td class="right-align">${data.rating}</td>
+                        `;
+                        eventList.appendChild(newRow);
+                    }
+                });
+            } catch (e) {
+                console.error("Error fetching events: ", e);
+                eventList.innerHTML = '<tr><td colspan="3" style="text-align: center; color: red;">Failed to load events.</td></tr>';
+            }
+        }
+
         // Function to handle adding the event to Firebase and DOM
         async function submitEvent() {
             const text = newEventText.value.trim();
             
             if (text) {
                 try {
-                    // Disable button to prevent double-clicks while posting
                     submitEventBtn.disabled = true;
 
-                    // Post to Firestore
                     const docRef = await addDoc(collection(db, "events"), {
-                        date: new Date().toISOString(), // Saving as an ISO string
+                        date: new Date().toISOString(),
                         eventDescription: text,
                         isActive: true,
-                        rating: 0 // int64 equivalent in JS
+                        rating: 0
                     });
                     
-                    console.log("Document written with ID: ", docRef.id);
-
-                    // Update the UI
+                    // Update the UI immediately without requiring a page refresh
                     const newRow = document.createElement('tr');
+                    // Insert at the top of the list
                     newRow.innerHTML = `
                         <td>${text}</td>
                         <td class="right-align">--</td>
-                        <td class="right-align"></td>
-                        <td class="right-align"></td>
+                        <td class="right-align">0</td>
                     `;
-                    eventList.appendChild(newRow);
+                    eventList.insertBefore(newRow, eventList.firstChild);
 
                     // Reset state
                     newEventText.value = '';
@@ -203,21 +225,21 @@
                     console.error("Error adding document: ", e);
                     alert("Failed to save event. Check console for details.");
                 } finally {
-                    // Re-enable button
                     submitEventBtn.disabled = false;
                 }
             }
         }
 
-        // Trigger submission on button click
         submitEventBtn.addEventListener('click', submitEvent);
 
-        // Trigger submission when pressing the Enter key inside the text box
         newEventText.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 submitEvent();
             }
         });
+
+        // Initialize the app by fetching data
+        loadEvents();
     </script>
 </body>
 </html>
