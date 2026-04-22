@@ -18,6 +18,7 @@
         font-weight: normal; 
         margin-bottom: 0.5em; 
         letter-spacing: -2px;
+        text-transform: lowercase;
     }
     .btn-outline {
         border: 1px solid #000;
@@ -29,6 +30,7 @@
         color: #000;
         display: inline-block;
         margin-bottom: 50px;
+        text-transform: lowercase;
     }
     .btn-outline:hover {
         background: #eee;
@@ -44,34 +46,36 @@
     table { 
         width: 100%; 
         border-collapse: collapse; 
-        table-layout: fixed; /* Ensures columns align across multiple tables */
+        table-layout: fixed;
     }
-    td:first-child { width: 75%; }
-    td:last-child { width: 25%; text-align: right; }
+    td:first-child, th:first-child { width: 75%; }
+    td:last-child, th:last-child { width: 25%; text-align: right; }
 
-    /* Top Three Wrapper with Green Border */
+    th {
+        text-transform: lowercase;
+    }
+
+    /* Top Three Wrapper - Greyscale */
     .top-three-wrapper {
         background: #fff;
         border-radius: 12px;
         padding: 15px 10px 5px 10px;
         margin-bottom: 10px; 
-        border: 2px solid #00aa00; /* Replaced drop shadow with green border */
-        display: none; /* Hidden until data loads */
+        border: 2px solid #000; /* Pure greyscale border */
+        display: none; 
     }
     .top-three-title {
         font-size: 1em;
         font-weight: bold;
         text-align: center;
         margin-bottom: 10px;
-        color: #00aa00; /* Match the border */
-        text-transform: uppercase;
+        color: #000; 
+        text-transform: lowercase; /* Forced lowercase */
         letter-spacing: 1px;
     }
     
-    /* Remove bottom border on the last row of the top tier so it fits cleanly */
     #top-events-table tr:last-child td { border-bottom: none; }
 
-    /* Remaining Events Table */
     #event-table {
         margin-bottom: 50px;
     }
@@ -86,8 +90,18 @@
     .event-row { cursor: pointer; }
     .event-row:hover { background: #f3f3f3; }
     
-    .event-title { font-weight: bold; font-size: 1.1em; }
-    .time-stamp { display: block; font-size: 0.8em; color: #666; margin-top: 4px; }
+    .event-title { 
+        font-weight: bold; 
+        font-size: 1.1em; 
+        text-transform: lowercase; 
+    }
+    .time-stamp { 
+        display: block; 
+        font-size: 0.8em; 
+        color: #666; 
+        margin-top: 4px; 
+        text-transform: lowercase;
+    }
     
     .description-row { display: none; background: #f7f7f7; }
     .description-row td { padding: 0 15px 20px 15px; color: #444; border-bottom: 1px solid #eee; }
@@ -96,7 +110,6 @@
     .expanded .description-row { display: table-row; }
     .expanded .expand-arrow { transform: rotate(180deg); }
     
-    /* Shift bottom border when expanded */
     tbody.expanded .event-row td { border-bottom: none; }
 
     .center-btn-container { text-align: center; }
@@ -114,6 +127,7 @@
         margin: 0 auto 10px auto; 
         border: 1px solid #000; 
         display: block;
+        text-transform: lowercase;
     }
     #add-event-form button { 
         padding: 10px 20px; 
@@ -122,12 +136,13 @@
         background: #000;
         color: #fff;
         border: 1px solid #000;
+        text-transform: lowercase;
     }
     #add-event-form button:hover {
         background: #333;
     }
     
-    /* Like Button Updates */
+    /* Like Button Updates - Greyscale Theme */
     .like-btn {
         background: none;
         border: 1px solid #000;
@@ -138,14 +153,15 @@
         font-weight: bold;
         font-size: 1.1em;
         color: #000;
-        transition: color 0.2s, border-color 0.2s;
+        transition: all 0.2s;
     }
     .like-btn:hover:not(:disabled) { background: #eee; }
     
-    /* Styling for when the user has already voted */
+    /* Styling for when the user has already voted - Solid Black */
     .like-btn.voted {
-        color: #00aa00;
-        border-color: #00aa00;
+        background: #000;
+        color: #fff;
+        border-color: #000;
     }
     .like-btn:disabled {
         cursor: not-allowed;
@@ -157,12 +173,12 @@
 
     <h1>mix it up</h1>
 
-    <a href="/about" class="btn-outline">Learn how it works &gt;&gt;</a>
+    <a href="/about" class="btn-outline">learn how it works &gt;&gt;</a>
 
     <div class="event-options-container">
 
         <div id="top-three-wrapper" class="top-three-wrapper">
-            <div id="countdown-display" class="top-three-title">Calculating time remaining...</div>
+            <div id="countdown-display" class="top-three-title">calculating time remaining...</div>
             <table id="top-events-table">
                 </table>
         </div>
@@ -171,12 +187,12 @@
             </table>
 
         <div class="center-btn-container">
-            <button id="add-event-btn" class="btn-outline">Add event</button>
+            <button id="add-event-btn" class="btn-outline">add event</button>
             
             <div id="add-event-form">
-                <input type="text" id="new-event-title" placeholder="Event Title (e.g. Movie Night)">
-                <input type="text" id="new-event-text" placeholder="Enter event details...">
-                <button id="submit-event-btn">Enter</button>
+                <input type="text" id="new-event-title" placeholder="event title (e.g. movie night)">
+                <input type="text" id="new-event-text" placeholder="enter event details...">
+                <button id="submit-event-btn">enter</button>
             </div>
         </div>
     </div>
@@ -226,7 +242,7 @@
 
                 if (distance < 0) {
                     clearInterval(timerInterval);
-                    countdownDisplay.innerText = "EVENT CHOSEN!";
+                    countdownDisplay.innerText = "event chosen!";
                     return;
                 }
 
@@ -235,7 +251,7 @@
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-                let displayStr = "NEXT EVENT CHOSEN IN: ";
+                let displayStr = "next event chosen in: ";
                 if (days > 0) displayStr += days + "d ";
                 displayStr += hours + "h " + minutes + "m " + seconds + "s";
 
@@ -276,8 +292,8 @@
                 localStorage.setItem('likedEvents', JSON.stringify(likedEvents));
                 
             } catch (error) {
-                console.error("Error updating rating: ", error);
-                alert("Failed to update vote. Please try again.");
+                console.error("error updating rating: ", error);
+                alert("failed to update vote. please try again.");
             } finally {
                 likeBtn.disabled = false;
             }
@@ -314,8 +330,8 @@
                     tbody.innerHTML = `
                         <tr class="event-row">
                             <td>
-                                <span class="event-title">${data.eventTitle || 'Untitled Event'} <span class="expand-arrow">▼</span></span>
-                                <span class="time-stamp">Submitted: ${timeString}</span>
+                                <span class="event-title">${data.eventTitle || 'untitled event'} <span class="expand-arrow">▼</span></span>
+                                <span class="time-stamp">submitted: ${timeString}</span>
                             </td>
                             <td>
                                 <span class="rating-val">${data.rating || 0}</span>
@@ -357,8 +373,8 @@
                 }
 
             } catch (e) {
-                console.error("Error fetching events: ", e);
-                restEventsTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for details.</td></tr></tbody>';
+                console.error("error fetching events: ", e);
+                restEventsTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">failed to load events. check console for details.</td></tr></tbody>';
             }
         }
 
@@ -367,7 +383,7 @@
             const text = newEventText.value.trim();
             
             if (!title || !text) {
-                alert("Please provide both a title and description.");
+                alert("please provide both a title and description.");
                 return;
             }
 
@@ -382,7 +398,7 @@
                     rating: 0
                 });
 
-                alert("Event submitted successfully! It will appear on the board once approved.");
+                alert("event submitted successfully! it will appear on the board once approved.");
                 
                 newEventTitle.value = '';
                 newEventText.value = '';
@@ -390,8 +406,8 @@
                 addEventBtn.style.display = 'inline-block';
                 
             } catch (e) {
-                console.error("Error adding document: ", e);
-                alert("Failed to save event. Check console for details.");
+                console.error("error adding document: ", e);
+                alert("failed to save event. check console for details.");
             } finally {
                 submitEventBtn.disabled = false;
             }
