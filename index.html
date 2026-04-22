@@ -38,11 +38,29 @@
         max-width: 800px;
         margin: 0 auto;
     }
-    .event-options-container h2 { 
-        font-weight: normal; 
-        font-size: 2em;
-        margin-bottom: 10px; 
+
+    /* Top Three Wrapper Styling */
+    .top-three-wrapper {
+        border: 1px solid #000;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        padding: 20px 25px 5px 25px;
+        margin-bottom: 50px;
+        background: #fff;
+        display: none; /* Hidden until data loads */
     }
+    .top-three-title {
+        font-size: 1.4em;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px dashed #ccc;
+    }
+    .top-three-wrapper table {
+        margin-bottom: 20px; 
+    }
+
     table { 
         width: 100%; 
         border-collapse: collapse; 
@@ -74,17 +92,9 @@
     .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.8em; margin-left: 8px; color: #888; }
     .expanded .description-row { display: table-row; }
     .expanded .expand-arrow { transform: rotate(180deg); }
-
-    /* Top Voted Styling - Thin Green Borders */
-    .top-voted td {
-        border-top: 1px solid #00aa00;
-        border-bottom: 1px solid #00aa00;
-    }
-    .top-voted td:first-child { border-left: 1px solid #00aa00; }
-    .top-voted td:last-child { border-right: 1px solid #00aa00; }
-    /* Shift bottom border when expanded */
-    .top-voted.expanded .event-row td { border-bottom: none; }
-    .top-voted.expanded .description-row td { border-bottom: 1px solid #00aa00; }
+    
+    /* Shift bottom border when expanded so it looks cleaner */
+    tbody.expanded .event-row td { border-bottom: none; }
 
     .center-btn-container { text-align: center; }
 
@@ -147,9 +157,24 @@
     <a href="/about" class="btn-outline">Learn how it works &gt;&gt;</a>
 
     <div class="event-options-container">
-        <table id="event-table">
+        
+        <div id="top-three-wrapper" class="top-three-wrapper">
+            <div class="top-three-title">One will be choosen on Thursday</div>
+            <table id="top-events-table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th class="right-align">Votes</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+        <table id="event-table" style="display: none;">
             <thead>
                 <tr>
+                    <th>Other Options</th>
+                    <th class="right-align">Votes</th>
                 </tr>
             </thead>
         </table>
@@ -189,7 +214,10 @@
         const submitEventBtn = document.getElementById('submit-event-btn');
         const newEventTitle = document.getElementById('new-event-title');
         const newEventText = document.getElementById('new-event-text');
-        const eventTable = document.getElementById('event-table');
+        
+        const topThreeWrapper = document.getElementById('top-three-wrapper');
+        const topEventsTable = document.getElementById('top-events-table');
+        const restEventsTable = document.getElementById('event-table');
 
         function getLikedEvents() {
             return JSON.parse(localStorage.getItem('likedEvents') || '[]');
@@ -201,30 +229,22 @@
             newEventTitle.focus();
         });
 
-        // Updated Like logic to handle toggling
         async function handleLike(eventId, likeBtn, ratingSpan) {
             let likedEvents = getLikedEvents();
             const isLiked = likedEvents.includes(eventId);
             const eventRef = doc(db, "events", eventId);
 
             try {
-                // Temporarily disable the button so they don't spam clicks while it updates
                 likeBtn.disabled = true;
 
                 if (isLiked) {
-                    // Remove upvote
                     await updateDoc(eventRef, { rating: increment(-1) });
                     ratingSpan.innerText = parseInt(ratingSpan.innerText) - 1;
-                    
-                    // Remove from localStorage
                     likedEvents = likedEvents.filter(id => id !== eventId);
                     likeBtn.classList.remove('voted');
                 } else {
-                    // Add upvote
                     await updateDoc(eventRef, { rating: increment(1) });
                     ratingSpan.innerText = parseInt(ratingSpan.innerText) + 1;
-                    
-                    // Add to localStorage
                     likedEvents.push(eventId);
                     likeBtn.classList.add('voted');
                 }
@@ -235,7 +255,6 @@
                 console.error("Error updating rating: ", error);
                 alert("Failed to update vote. Please try again.");
             } finally {
-                // Re-enable button after operation completes
                 likeBtn.disabled = false;
             }
         }
@@ -251,7 +270,8 @@
                 const querySnapshot = await getDocs(q);
                 const likedEvents = getLikedEvents();
                 
-                eventTable.innerHTML = `
+                // Reset internal HTML 
+                topEventsTable.innerHTML = `
                     <thead>
                         <tr>
                             <th>Event</th>
@@ -259,10 +279,19 @@
                         </tr>
                     </thead>
                 `;
+                restEventsTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Other Options</th>
+                            <th class="right-align">Votes</th>
+                        </tr>
+                    </thead>
+                `;
 
-                let isFirst = true;
+                let count = 0;
 
                 querySnapshot.forEach((docSnapshot) => {
+                    count++;
                     const data = docSnapshot.data();
                     const eventId = docSnapshot.id;
                     const isLiked = likedEvents.includes(eventId);
@@ -271,12 +300,7 @@
                     const timeString = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' @ ' + eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
                     const tbody = document.createElement('tbody');
-                    if (isFirst) {
-                        tbody.classList.add('top-voted');
-                        isFirst = false;
-                    }
 
-                    // Inject the "voted" class if it's already liked
                     tbody.innerHTML = `
                         <tr class="event-row">
                             <td>
@@ -307,11 +331,30 @@
                         handleLike(eventId, likeBtn, ratingSpan);
                     });
                     
-                    eventTable.appendChild(tbody);
+                    // Route to the correct table
+                    if (count <= 3) {
+                        topEventsTable.appendChild(tbody);
+                    } else {
+                        restEventsTable.appendChild(tbody);
+                    }
                 });
+
+                // Display logic based on amount of events
+                if (count === 0) {
+                    topThreeWrapper.style.display = 'none';
+                    restEventsTable.style.display = 'none';
+                } else if (count <= 3) {
+                    topThreeWrapper.style.display = 'block';
+                    restEventsTable.style.display = 'none';
+                } else {
+                    topThreeWrapper.style.display = 'block';
+                    restEventsTable.style.display = 'table';
+                }
+
             } catch (e) {
                 console.error("Error fetching events: ", e);
-                eventTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for details.</td></tr></tbody>';
+                restEventsTable.style.display = 'table';
+                restEventsTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for details.</td></tr></tbody>';
             }
         }
 
