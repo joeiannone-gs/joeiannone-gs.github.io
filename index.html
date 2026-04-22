@@ -5,120 +5,196 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>mix it up</title>
 <style>
+    /* Modern Greyscale & Green Aesthetic */
+    :root {
+        --primary-text: #333333;
+        --secondary-text: #666666;
+        --timestamp-text: #999999;
+        --background: #f9f9f9;
+        --content-background: #ffffff;
+        --border-color: #dddddd;
+        --top-event-accent: #00c853; /* Modern Google Green */
+        --top-event-bg: #e8f5e9;
+    }
+
     body { 
-        font-family: Arial, sans-serif; 
-        text-align: center; 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        background-color: var(--background);
+        color: var(--primary-text);
         margin: 0; 
-        padding: 40px 20px; 
-        color: #000; 
+        padding: 60px 20px; 
     }
+
     h1 { 
-        font-size: 5em; 
-        font-weight: normal; 
-        margin-bottom: 0.5em; 
-        letter-spacing: -2px;
+        font-size: 3.5em; 
+        font-weight: 300; /* Lighter font weight for a clean look */
+        margin-top: 0;
+        margin-bottom: 0.2em; 
+        letter-spacing: -1.5px;
+        color: var(--primary-text);
+        text-align: center;
     }
+
     .btn-outline {
-        border: 4px solid black;
-        background: white;
-        padding: 12px 24px;
-        font-size: 1.2em;
+        border: 1px solid var(--primary-text);
+        background: transparent;
+        padding: 10px 20px;
+        font-size: 1.1em;
         cursor: pointer;
         text-decoration: none;
-        color: black;
+        color: var(--primary-text);
         display: inline-block;
-        margin-bottom: 50px;
+        transition: background 0.2s, color 0.2s;
+        border-radius: 2px;
     }
+    .btn-outline:hover {
+        background: var(--primary-text);
+        color: var(--content-background);
+    }
+
+    /* Primary CTA styling */
+    #primary-cta {
+        margin-bottom: 60px;
+        text-align: center;
+    }
+
+    /* Main Content Area styling with shadow and background */
     .event-options-container {
         text-align: left;
         max-width: 800px;
         margin: 0 auto;
+        background: var(--content-background);
+        padding: 40px;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
+
     .event-options-container h2 { 
         font-weight: normal; 
         font-size: 2em;
         margin-bottom: 10px; 
     }
+
     table { 
         width: 100%; 
         border-collapse: collapse; 
-        margin-bottom: 50px; 
+        margin-bottom: 60px; 
     }
+
     th { 
         text-align: left; 
-        border-bottom: 2px solid black; 
-        padding-bottom: 5px; 
+        border-bottom: 1px solid #ccc; 
+        padding: 12px 10px; 
         font-weight: normal; 
-        font-size: 1.1em; 
+        font-size: 1.05em; 
+        color: var(--secondary-text);
     }
+
     .right-align { text-align: right; }
+    
     td { 
-        padding: 15px 5px; 
+        padding: 20px 10px; 
         font-size: 1em; 
         border-bottom: 1px solid #eee;
     }
     
     /* Accordion & Row Styling */
-    .event-row { cursor: pointer; transition: background 0.2s; }
-    .event-row:hover { background: #f9f9f9; }
-    .event-title { font-weight: bold; font-size: 1.1em; }
-    .time-stamp { display: block; font-size: 0.8em; color: #666; margin-top: 4px; }
+    .event-row { cursor: pointer; transition: background 0.1s; }
+    .event-row:hover { background: #f6f6f6; }
     
-    .description-row { display: none; background: #fafafa; }
-    .description-row td { padding: 0 15px 20px 15px; color: #444; border-bottom: 1px solid #ccc; }
+    /* Alternating row colors for better readability */
+    tbody:nth-child(even) .event-row { background: #fafafa; }
+    tbody:nth-child(even) .event-row:hover { background: #f0f0f0; }
+
+    .event-title { font-weight: bold; font-size: 1.05em; color: var(--primary-text); }
+    .time-stamp { display: block; font-size: 0.8em; color: var(--timestamp-text); margin-top: 5px; }
     
-    .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.8em; margin-left: 8px; color: #888; }
+    .description-row { display: none; }
+    .description-row td { 
+        padding: 10px 20px 30px 20px; 
+        color: var(--secondary-text); 
+        border-bottom: 1px solid var(--border-color);
+        background: #fdfdfd;
+    }
+    
+    .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.7em; margin-left: 8px; color: #aaaaaa; }
     .expanded .description-row { display: table-row; }
     .expanded .expand-arrow { transform: rotate(180deg); }
 
-    /* Top Voted Styling */
-    .top-voted td {
-        border-top: 3px solid #FFD700;
-        border-bottom: 3px solid #FFD700;
-        background: #fffdf5;
+    /* Top Voted Styling (Replaced Yellow with Green) */
+    .top-voted {
+        border-top: 2px solid var(--top-event-accent);
+        background: var(--top-event-bg) !important;
     }
-    .top-voted td:first-child { border-left: 3px solid #FFD700; }
-    .top-voted td:last-child { border-right: 3px solid #FFD700; }
-    /* Shift bottom border when expanded */
+    .top-voted .event-row { background: transparent !important; }
+    
+    /* Expanded border for top event */
+    .top-voted.expanded .description-row td { 
+        border-bottom: 2px solid var(--top-event-accent); 
+        background: var(--top-event-bg) !important;
+    }
     .top-voted.expanded .event-row td { border-bottom: none; }
-    .top-voted.expanded .description-row td { border-bottom: 3px solid #FFD700; background: #fffdf5;}
+
 
     .center-btn-container { text-align: center; }
 
-    /* Hidden by default */
+    /* Form styling */
     #add-event-form { 
         display: none; 
-        margin-top: 15px; 
+        margin-top: 20px; 
+        padding: 20px;
+        background: #fdfdfd;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
     }
     #add-event-form input[type="text"] { 
-        padding: 10px; 
-        font-size: 1.1em; 
+        padding: 12px; 
+        font-size: 1.05em; 
         width: 100%; 
         max-width: 400px;
-        margin: 0 auto 10px auto; 
-        border: 2px solid black; 
+        margin: 0 auto 15px auto; 
+        border: 1px solid var(--border-color);
+        border-radius: 2px;
         display: block;
+        transition: border-color 0.2s;
     }
+    #add-event-form input[type="text"]:focus {
+        border-color: #777;
+        outline: none;
+    }
+
     #add-event-form button { 
-        padding: 10px 20px; 
+        padding: 12px 24px; 
         font-size: 1.1em; 
         cursor: pointer; 
-        background: black;
-        color: white;
-        border: 2px solid black;
+        background: var(--primary-text);
+        color: var(--content-background);
+        border: 1px solid var(--primary-text);
+        border-radius: 2px;
+        transition: background 0.2s;
+    }
+    #add-event-form button:hover {
+        background: #000;
     }
     
+    /* Like Button Styling */
     .like-btn {
-        background: none;
-        border: 2px solid black;
-        border-radius: 4px;
+        background: var(--content-background);
+        border: 1px solid #444;
+        border-radius: 2px;
         cursor: pointer;
-        padding: 4px 10px;
+        padding: 6px 12px;
         margin-left: 10px;
         font-weight: bold;
-        font-size: 1.1em;
+        font-size: 1em;
+        color: #444;
+        transition: background 0.2s, color 0.2s;
     }
-    .like-btn:hover:not(:disabled) { background: #eee; }
+    .like-btn:hover:not(:disabled) { 
+        background: #eee;
+        border-color: #222;
+        color: #222;
+    }
     .like-btn:disabled {
         cursor: not-allowed;
         opacity: 0.3;
@@ -130,18 +206,17 @@
 
     <h1>mix it up</h1>
 
-    <a href="/about" class="btn-outline">Learn how it works &gt;&gt;</a>
+    <div id="primary-cta">
+        <a href="/about" class="btn-outline">Learn how it works &gt;&gt;</a>
+    </div>
 
     <div class="event-options-container">
-        <h2>Event options:</h2>
         <table id="event-table">
             <thead>
                 <tr>
-                    <th>Event</th>
-                    <th class="right-align">Votes</th>
-                </tr>
+                    </tr>
             </thead>
-            </table>
+        </table>
 
         <div class="center-btn-container">
             <button id="add-event-btn" class="btn-outline">Add event</button>
@@ -159,6 +234,7 @@
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
 
+        // Firebase configuration (Redacted)
         const firebaseConfig = {
             apiKey: "AIzaSyBI_1847xtDLdHzf18ZVAPaeQC0JyKYrVs",
             authDomain: "mixitup-390a3.firebaseapp.com",
@@ -215,7 +291,6 @@
 
         async function loadEvents() {
             try {
-                // Sorted by rating for the "Votes" leaderboard
                 const q = query(
                     collection(db, "events"), 
                     where("isActive", "==", true), 
@@ -242,11 +317,9 @@
                     const eventId = docSnapshot.id;
                     const isLiked = likedEvents.includes(eventId);
                     
-                    // Format Date
                     const eventDate = new Date(data.date);
                     const timeString = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' @ ' + eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-                    // Create a tbody for each event so we can group the row and description
                     const tbody = document.createElement('tbody');
                     if (isFirst) {
                         tbody.classList.add('top-voted');
@@ -273,9 +346,8 @@
                     const likeBtn = tbody.querySelector('.like-btn');
                     const ratingSpan = tbody.querySelector('.rating-val');
                     
-                    // Toggle Description
                     mainRow.addEventListener('click', (e) => {
-                        if (e.target.tagName === 'BUTTON') return; // Don't expand if they are clicking the vote button
+                        if (e.target.tagName === 'BUTTON') return; // Don't expand if clicking the vote button
                         tbody.classList.toggle('expanded');
                     });
 
