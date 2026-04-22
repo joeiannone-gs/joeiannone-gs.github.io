@@ -114,6 +114,7 @@
         background: #333;
     }
     
+    /* Like Button Updates */
     .like-btn {
         background: none;
         border: 1px solid #000;
@@ -123,12 +124,19 @@
         margin-left: 10px;
         font-weight: bold;
         font-size: 1.1em;
+        color: #000;
+        transition: color 0.2s, border-color 0.2s;
     }
     .like-btn:hover:not(:disabled) { background: #eee; }
+    
+    /* Styling for when the user has already voted */
+    .like-btn.voted {
+        color: #00aa00;
+        border-color: #00aa00;
+    }
     .like-btn:disabled {
         cursor: not-allowed;
-        opacity: 0.3;
-        border-color: #ccc;
+        opacity: 0.5;
     }
 </style>
 </head>
@@ -193,26 +201,42 @@
             newEventTitle.focus();
         });
 
+        // Updated Like logic to handle toggling
         async function handleLike(eventId, likeBtn, ratingSpan) {
-            const likedEvents = getLikedEvents();
-            if (likedEvents.includes(eventId)) return;
+            let likedEvents = getLikedEvents();
+            const isLiked = likedEvents.includes(eventId);
+            const eventRef = doc(db, "events", eventId);
 
             try {
+                // Temporarily disable the button so they don't spam clicks while it updates
                 likeBtn.disabled = true;
-                const eventRef = doc(db, "events", eventId);
-                
-                await updateDoc(eventRef, {
-                    rating: increment(1)
-                });
 
-                ratingSpan.innerText = parseInt(ratingSpan.innerText) + 1;
-                likedEvents.push(eventId);
+                if (isLiked) {
+                    // Remove upvote
+                    await updateDoc(eventRef, { rating: increment(-1) });
+                    ratingSpan.innerText = parseInt(ratingSpan.innerText) - 1;
+                    
+                    // Remove from localStorage
+                    likedEvents = likedEvents.filter(id => id !== eventId);
+                    likeBtn.classList.remove('voted');
+                } else {
+                    // Add upvote
+                    await updateDoc(eventRef, { rating: increment(1) });
+                    ratingSpan.innerText = parseInt(ratingSpan.innerText) + 1;
+                    
+                    // Add to localStorage
+                    likedEvents.push(eventId);
+                    likeBtn.classList.add('voted');
+                }
+
                 localStorage.setItem('likedEvents', JSON.stringify(likedEvents));
                 
             } catch (error) {
                 console.error("Error updating rating: ", error);
+                alert("Failed to update vote. Please try again.");
+            } finally {
+                // Re-enable button after operation completes
                 likeBtn.disabled = false;
-                alert("Failed to like the event. Please try again.");
             }
         }
 
@@ -252,6 +276,7 @@
                         isFirst = false;
                     }
 
+                    // Inject the "voted" class if it's already liked
                     tbody.innerHTML = `
                         <tr class="event-row">
                             <td>
@@ -260,7 +285,7 @@
                             </td>
                             <td class="right-align">
                                 <span class="rating-val">${data.rating || 0}</span>
-                                <button class="like-btn" ${isLiked ? 'disabled' : ''}>▲</button>
+                                <button class="like-btn ${isLiked ? 'voted' : ''}">▲</button>
                             </td>
                         </tr>
                         <tr class="description-row">
@@ -286,7 +311,7 @@
                 });
             } catch (e) {
                 console.error("Error fetching events: ", e);
-                eventTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for index link.</td></tr></tbody>';
+                eventTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for details.</td></tr></tbody>';
             }
         }
 
