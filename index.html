@@ -33,67 +33,85 @@
     .btn-outline:hover {
         background: #eee;
     }
+    
     .event-options-container {
         text-align: left;
         max-width: 800px;
         margin: 0 auto;
     }
 
-    /* Top Three Wrapper Styling */
-    .top-three-wrapper {
-        border: 1px solid #000;
-        border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        padding: 20px 25px 5px 25px;
-        margin-bottom: 50px;
-        background: #fff;
-        display: none; /* Hidden until data loads */
-    }
-    .top-three-title {
-        font-size: 1.4em;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px dashed #ccc;
-    }
-    .top-three-wrapper table {
-        margin-bottom: 20px; 
-    }
-
+    /* Table alignment magic for continuity */
     table { 
         width: 100%; 
         border-collapse: collapse; 
-        margin-bottom: 50px; 
+        table-layout: fixed; /* Ensures columns align across multiple tables */
+    }
+    th:first-child, td:first-child { width: 75%; }
+    th:last-child, td:last-child { width: 25%; text-align: right; }
+    
+    /* Header Table */
+    .header-table {
+        margin-bottom: 10px;
     }
     th { 
         text-align: left; 
-        border-bottom: 1px solid #000; 
-        padding-bottom: 5px; 
+        border-bottom: 2px solid #000; 
+        padding-bottom: 10px; 
+        padding-left: 10px;
+        padding-right: 10px;
         font-weight: normal; 
         font-size: 1.1em; 
     }
-    .right-align { text-align: right; }
+
+    /* Top Three Wrapper with Inner Shadow */
+    .top-three-wrapper {
+        box-shadow: inset 0px 4px 12px rgba(0, 0, 0, 0.12); /* Inner drop shadow */
+        background: #fafafa;
+        border-radius: 12px;
+        padding: 15px 10px 5px 10px;
+        margin-bottom: 10px; /* Kept small to feel continuous */
+        border: 1px solid #eaeaea;
+        display: none; /* Hidden until data loads */
+    }
+    .top-three-title {
+        font-size: 0.9em;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 10px;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* Remove bottom border on the last row of the top tier so it fits cleanly */
+    #top-events-table tr:last-child td { border-bottom: none; }
+
+    /* Remaining Events Table */
+    #event-table {
+        margin-bottom: 50px;
+    }
+    
     td { 
-        padding: 15px 5px; 
+        padding: 15px 10px; 
         font-size: 1em; 
         border-bottom: 1px solid #eee;
     }
     
     /* Accordion & Row Styling */
     .event-row { cursor: pointer; }
-    .event-row:hover { background: #fafafa; }
+    .event-row:hover { background: #f3f3f3; }
+    
     .event-title { font-weight: bold; font-size: 1.1em; }
     .time-stamp { display: block; font-size: 0.8em; color: #666; margin-top: 4px; }
     
-    .description-row { display: none; background: #fafafa; }
+    .description-row { display: none; background: #f7f7f7; }
     .description-row td { padding: 0 15px 20px 15px; color: #444; border-bottom: 1px solid #eee; }
     
     .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.8em; margin-left: 8px; color: #888; }
     .expanded .description-row { display: table-row; }
     .expanded .expand-arrow { transform: rotate(180deg); }
     
-    /* Shift bottom border when expanded so it looks cleaner */
+    /* Shift bottom border when expanded */
     tbody.expanded .event-row td { border-bottom: none; }
 
     .center-btn-container { text-align: center; }
@@ -158,26 +176,23 @@
 
     <div class="event-options-container">
         
-        <div id="top-three-wrapper" class="top-three-wrapper">
-            <div class="top-three-title">One will be choosen on Thursday</div>
-            <table id="top-events-table">
-                <thead>
-                    <tr>
-                        <th>Event</th>
-                        <th class="right-align">Votes</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-
-        <table id="event-table" style="display: none;">
+        <table class="header-table">
             <thead>
                 <tr>
-                    <th>Other Options</th>
-                    <th class="right-align">Votes</th>
+                    <th>Event</th>
+                    <th>Votes</th>
                 </tr>
             </thead>
         </table>
+
+        <div id="top-three-wrapper" class="top-three-wrapper">
+            <div class="top-three-title">One will be chosen on Thursday</div>
+            <table id="top-events-table">
+                </table>
+        </div>
+
+        <table id="event-table">
+            </table>
 
         <div class="center-btn-container">
             <button id="add-event-btn" class="btn-outline">Add event</button>
@@ -270,23 +285,9 @@
                 const querySnapshot = await getDocs(q);
                 const likedEvents = getLikedEvents();
                 
-                // Reset internal HTML 
-                topEventsTable.innerHTML = `
-                    <thead>
-                        <tr>
-                            <th>Event</th>
-                            <th class="right-align">Votes</th>
-                        </tr>
-                    </thead>
-                `;
-                restEventsTable.innerHTML = `
-                    <thead>
-                        <tr>
-                            <th>Other Options</th>
-                            <th class="right-align">Votes</th>
-                        </tr>
-                    </thead>
-                `;
+                // Clear tables 
+                topEventsTable.innerHTML = '';
+                restEventsTable.innerHTML = '';
 
                 let count = 0;
 
@@ -307,7 +308,7 @@
                                 <span class="event-title">${data.eventTitle || 'Untitled Event'} <span class="expand-arrow">▼</span></span>
                                 <span class="time-stamp">Submitted: ${timeString}</span>
                             </td>
-                            <td class="right-align">
+                            <td>
                                 <span class="rating-val">${data.rating || 0}</span>
                                 <button class="like-btn ${isLiked ? 'voted' : ''}">▲</button>
                             </td>
@@ -331,7 +332,7 @@
                         handleLike(eventId, likeBtn, ratingSpan);
                     });
                     
-                    // Route to the correct table
+                    // Route to the correct table section
                     if (count <= 3) {
                         topEventsTable.appendChild(tbody);
                     } else {
@@ -342,18 +343,12 @@
                 // Display logic based on amount of events
                 if (count === 0) {
                     topThreeWrapper.style.display = 'none';
-                    restEventsTable.style.display = 'none';
-                } else if (count <= 3) {
-                    topThreeWrapper.style.display = 'block';
-                    restEventsTable.style.display = 'none';
                 } else {
                     topThreeWrapper.style.display = 'block';
-                    restEventsTable.style.display = 'table';
                 }
 
             } catch (e) {
                 console.error("Error fetching events: ", e);
-                restEventsTable.style.display = 'table';
                 restEventsTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for details.</td></tr></tbody>';
             }
         }
