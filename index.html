@@ -53,6 +53,13 @@
 
     th {
         text-transform: lowercase;
+        text-align: left; 
+        border-bottom: 2px solid #000; 
+        padding-bottom: 10px; 
+        padding-left: 10px;
+        padding-right: 10px;
+        font-weight: normal; 
+        font-size: 1.1em; 
     }
 
     /* Top Three Wrapper - Greyscale */
@@ -104,7 +111,15 @@
     }
     
     .description-row { display: none; background: #f7f7f7; }
-    .description-row td { padding: 0 15px 20px 15px; color: #444; border-bottom: 1px solid #eee; }
+    
+    /* Updated description row for left alignment and padding */
+    .description-row td { 
+        padding: 15px 25px 25px 25px; /* Added spacing */
+        color: #444; 
+        border-bottom: 1px solid #eee; 
+        text-align: left; /* Forced left align */
+        line-height: 1.6; /* Better readability */
+    }
     
     .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.8em; margin-left: 8px; color: #888; }
     .expanded .description-row { display: table-row; }
@@ -203,10 +218,11 @@
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
 
         // ==========================================
-        // COUNTDOWN TARGET CONFIGURATION
-        // Format: YYYY-MM-DDTHH:MM:SS-04:00 (Adjust the timezone offset as needed)
+        // RECURRING COUNTDOWN CONFIGURATION
         // ==========================================
-        const TARGET_DATE = "2026-04-23T17:00:00-04:00"; 
+        const TARGET_DAY = 4; // 0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday
+        const TARGET_HOUR = 17; // 24-hour format (e.g. 17 = 5:00 PM)
+        const TARGET_MINUTE = 0; // 0-59
 
         const firebaseConfig = {
             apiKey: "AIzaSyBI_1847xtDLdHzf18ZVAPaeQC0JyKYrVs",
@@ -233,17 +249,34 @@
         const restEventsTable = document.getElementById('event-table');
         const countdownDisplay = document.getElementById('countdown-display');
 
+        // Calculates the timestamp for the next occurrence of the target day/time
+        function getNextTargetDate() {
+            const now = new Date();
+            let target = new Date(now);
+            target.setHours(TARGET_HOUR, TARGET_MINUTE, 0, 0);
+
+            let daysToAdd = (TARGET_DAY + 7 - now.getDay()) % 7;
+            
+            // If today is the target day, but the time has already passed, set it for next week
+            if (daysToAdd === 0 && target <= now) {
+                daysToAdd = 7;
+            }
+            
+            target.setDate(target.getDate() + daysToAdd);
+            return target.getTime();
+        }
+
         function startCountdown() {
-            const targetTime = new Date(TARGET_DATE).getTime();
+            let currentTarget = getNextTargetDate();
 
             const timerInterval = setInterval(() => {
                 const now = new Date().getTime();
-                const distance = targetTime - now;
+                let distance = currentTarget - now;
 
+                // If timer hits zero, calculate the next week's occurrence automatically
                 if (distance < 0) {
-                    clearInterval(timerInterval);
-                    countdownDisplay.innerText = "event chosen!";
-                    return;
+                    currentTarget = getNextTargetDate();
+                    distance = currentTarget - now;
                 }
 
                 const days = Math.floor(distance / (1000 * 60 * 60 * 24));
