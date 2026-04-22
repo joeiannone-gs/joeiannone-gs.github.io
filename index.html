@@ -46,39 +46,24 @@
         border-collapse: collapse; 
         table-layout: fixed; /* Ensures columns align across multiple tables */
     }
-    th:first-child, td:first-child { width: 75%; }
-    th:last-child, td:last-child { width: 25%; text-align: right; }
-    
-    /* Header Table */
-    .header-table {
-        margin-bottom: 10px;
-    }
-    th { 
-        text-align: left; 
-        border-bottom: 2px solid #000; 
-        padding-bottom: 10px; 
-        padding-left: 10px;
-        padding-right: 10px;
-        font-weight: normal; 
-        font-size: 1.1em; 
-    }
+    td:first-child { width: 75%; }
+    td:last-child { width: 25%; text-align: right; }
 
-    /* Top Three Wrapper with Inner Shadow */
+    /* Top Three Wrapper with Green Border */
     .top-three-wrapper {
-        box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.12); /* Inner drop shadow */
-        background: #fafafa;
+        background: #fff;
         border-radius: 12px;
         padding: 15px 10px 5px 10px;
-        margin-bottom: 10px; /* Kept small to feel continuous */
-        border: 1px solid #eaeaea;
+        margin-bottom: 10px; 
+        border: 2px solid #00aa00; /* Replaced drop shadow with green border */
         display: none; /* Hidden until data loads */
     }
     .top-three-title {
-        font-size: 0.9em;
+        font-size: 1em;
         font-weight: bold;
         text-align: center;
         margin-bottom: 10px;
-        color: #555;
+        color: #00aa00; /* Match the border */
         text-transform: uppercase;
         letter-spacing: 1px;
     }
@@ -175,18 +160,9 @@
     <a href="/about" class="btn-outline">Learn how it works &gt;&gt;</a>
 
     <div class="event-options-container">
-        
-        <table class="header-table">
-            <thead>
-                <tr>
-                    <th>Event</th>
-                    <th>Votes</th>
-                </tr>
-            </thead>
-        </table>
 
         <div id="top-three-wrapper" class="top-three-wrapper">
-            <div class="top-three-title">One will be chosen on Thursday</div>
+            <div id="countdown-display" class="top-three-title">Calculating time remaining...</div>
             <table id="top-events-table">
                 </table>
         </div>
@@ -209,6 +185,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
+
+        // ==========================================
+        // COUNTDOWN TARGET CONFIGURATION
+        // Format: YYYY-MM-DDTHH:MM:SS-04:00 (Adjust the timezone offset as needed)
+        // ==========================================
+        const TARGET_DATE = "2026-04-23T17:00:00-04:00"; 
 
         const firebaseConfig = {
             apiKey: "AIzaSyBI_1847xtDLdHzf18ZVAPaeQC0JyKYrVs",
@@ -233,6 +215,33 @@
         const topThreeWrapper = document.getElementById('top-three-wrapper');
         const topEventsTable = document.getElementById('top-events-table');
         const restEventsTable = document.getElementById('event-table');
+        const countdownDisplay = document.getElementById('countdown-display');
+
+        function startCountdown() {
+            const targetTime = new Date(TARGET_DATE).getTime();
+
+            const timerInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = targetTime - now;
+
+                if (distance < 0) {
+                    clearInterval(timerInterval);
+                    countdownDisplay.innerText = "EVENT CHOSEN!";
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                let displayStr = "NEXT EVENT CHOSEN IN: ";
+                if (days > 0) displayStr += days + "d ";
+                displayStr += hours + "h " + minutes + "m " + seconds + "s";
+
+                countdownDisplay.innerText = displayStr;
+            }, 1000);
+        }
 
         function getLikedEvents() {
             return JSON.parse(localStorage.getItem('likedEvents') || '[]');
@@ -396,6 +405,8 @@
             }
         });
 
+        // Initialize features
+        startCountdown();
         loadEvents();
     </script>
 </body>
