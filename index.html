@@ -102,12 +102,17 @@
         font-size: 1.1em; 
         text-transform: lowercase; 
     }
+    
+    /* Hide timestamp by default, show on expand */
     .time-stamp { 
-        display: block; 
+        display: none; 
         font-size: 0.8em; 
         color: #666; 
-        margin-top: 4px; 
+        margin-top: 6px; 
         text-transform: lowercase;
+    }
+    .expanded .time-stamp {
+        display: block;
     }
     
     .description-row { display: none; background: #f7f7f7; }
@@ -120,8 +125,8 @@
         line-height: 1.6; 
     }
     
-    /* New Learn More Button */
-    .learn-more-btn {
+    /* View Idea Button */
+    .view-idea-btn {
         display: inline-block;
         margin-left: 10px;
         padding: 2px 8px;
@@ -136,7 +141,7 @@
         top: -1px;
         transition: background 0.2s, color 0.2s;
     }
-    .expanded .learn-more-btn {
+    .expanded .view-idea-btn {
         background: #000;
         color: #fff;
     }
@@ -381,7 +386,7 @@
                         <tr class="event-row">
                             <td>
                                 <span class="event-title">${data.eventTitle || 'untitled event'}</span>
-                                <span class="learn-more-btn">learn more</span>
+                                <span class="view-idea-btn">view idea</span>
                                 <span class="time-stamp">submitted: ${timeString}</span>
                             </td>
                             <td>
