@@ -5,334 +5,335 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>mix it up</title>
 <style>
-    body { 
-        font-family: Arial, sans-serif; 
-        text-align: center; 
-        margin: 0; 
-        padding: 40px 20px; 
-        color: #000; 
-    }
-    h1 { 
-        font-size: 5em; 
-        font-weight: normal; 
-        margin-bottom: 0.5em; 
-        letter-spacing: -2px;
-    }
-    .btn-outline {
-        border: 4px solid black;
-        background: white;
-        padding: 12px 24px;
-        font-size: 1.2em;
-        cursor: pointer;
-        text-decoration: none;
-        color: black;
-        display: inline-block;
-        margin-bottom: 50px;
-    }
-    .event-options-container {
-        text-align: left;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-    .event-options-container h2 { 
-        font-weight: normal; 
-        font-size: 2em;
-        margin-bottom: 10px; 
-    }
-    table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin-bottom: 50px; 
-    }
-    th { 
-        text-align: left; 
-        border-bottom: 2px solid black; 
-        padding-bottom: 5px; 
-        font-weight: normal; 
-        font-size: 1.1em; 
-    }
-    .right-align { text-align: right; }
-    td { 
-        padding: 15px 5px; 
-        font-size: 1em; 
-        border-bottom: 1px solid #eee;
-    }
-    
-    /* Accordion & Row Styling */
-    .event-row { cursor: pointer; transition: background 0.2s; }
-    .event-row:hover { background: #f9f9f9; }
-    .event-title { font-weight: bold; font-size: 1.1em; }
-    .time-stamp { display: block; font-size: 0.8em; color: #666; margin-top: 4px; }
-    
-    .description-row { display: none; background: #fafafa; }
-    .description-row td { padding: 0 15px 20px 15px; color: #444; border-bottom: 1px solid #ccc; }
-    
-    .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.8em; margin-left: 8px; color: #888; }
-    .expanded .description-row { display: table-row; }
-    .expanded .expand-arrow { transform: rotate(180deg); }
+    body { 
+        font-family: Arial, sans-serif; 
+        text-align: center; 
+        margin: 0; 
+        padding: 40px 20px; 
+        color: #000;
+        background: #fff;
+    }
+    h1 { 
+        font-size: 5em; 
+        font-weight: normal; 
+        margin-bottom: 0.5em; 
+        letter-spacing: -2px;
+    }
+    .btn-outline {
+        border: 1px solid #000;
+        background: #fff;
+        padding: 12px 24px;
+        font-size: 1.2em;
+        cursor: pointer;
+        text-decoration: none;
+        color: #000;
+        display: inline-block;
+        margin-bottom: 50px;
+    }
+    .btn-outline:hover {
+        background: #eee;
+    }
+    .event-options-container {
+        text-align: left;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .event-options-container h2 { 
+        font-weight: normal; 
+        font-size: 2em;
+        margin-bottom: 10px; 
+    }
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-bottom: 50px; 
+    }
+    th { 
+        text-align: left; 
+        border-bottom: 1px solid #000; 
+        padding-bottom: 5px; 
+        font-weight: normal; 
+        font-size: 1.1em; 
+    }
+    .right-align { text-align: right; }
+    td { 
+        padding: 15px 5px; 
+        font-size: 1em; 
+        border-bottom: 1px solid #eee;
+    }
+    
+    /* Accordion & Row Styling */
+    .event-row { cursor: pointer; }
+    .event-row:hover { background: #fafafa; }
+    .event-title { font-weight: bold; font-size: 1.1em; }
+    .time-stamp { display: block; font-size: 0.8em; color: #666; margin-top: 4px; }
+    
+    .description-row { display: none; background: #fafafa; }
+    .description-row td { padding: 0 15px 20px 15px; color: #444; border-bottom: 1px solid #eee; }
+    
+    .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.8em; margin-left: 8px; color: #888; }
+    .expanded .description-row { display: table-row; }
+    .expanded .expand-arrow { transform: rotate(180deg); }
 
-    /* Top Voted Styling */
-    .top-voted td {
-        border-top: 3px solid #FFD700;
-        border-bottom: 3px solid #FFD700;
-        background: #fffdf5;
-    }
-    .top-voted td:first-child { border-left: 3px solid #FFD700; }
-    .top-voted td:last-child { border-right: 3px solid #FFD700; }
-    /* Shift bottom border when expanded */
-    .top-voted.expanded .event-row td { border-bottom: none; }
-    .top-voted.expanded .description-row td { border-bottom: 3px solid #FFD700; background: #fffdf5;}
+    /* Top Voted Styling - Thin Green Borders */
+    .top-voted td {
+        border-top: 1px solid #00aa00;
+        border-bottom: 1px solid #00aa00;
+    }
+    .top-voted td:first-child { border-left: 1px solid #00aa00; }
+    .top-voted td:last-child { border-right: 1px solid #00aa00; }
+    /* Shift bottom border when expanded */
+    .top-voted.expanded .event-row td { border-bottom: none; }
+    .top-voted.expanded .description-row td { border-bottom: 1px solid #00aa00; }
 
-    .center-btn-container { text-align: center; }
+    .center-btn-container { text-align: center; }
 
-    /* Hidden by default */
-    #add-event-form { 
-        display: none; 
-        margin-top: 15px; 
-    }
-    #add-event-form input[type="text"] { 
-        padding: 10px; 
-        font-size: 1.1em; 
-        width: 100%; 
-        max-width: 400px;
-        margin: 0 auto 10px auto; 
-        border: 2px solid black; 
-        display: block;
-    }
-    #add-event-form button { 
-        padding: 10px 20px; 
-        font-size: 1.1em; 
-        cursor: pointer; 
-        background: black;
-        color: white;
-        border: 2px solid black;
-    }
-    
-    .like-btn {
-        background: none;
-        border: 2px solid black;
-        border-radius: 4px;
-        cursor: pointer;
-        padding: 4px 10px;
-        margin-left: 10px;
-        font-weight: bold;
-        font-size: 1.1em;
-    }
-    .like-btn:hover:not(:disabled) { background: #eee; }
-    .like-btn:disabled {
-        cursor: not-allowed;
-        opacity: 0.3;
-        border-color: #ccc;
-    }
+    /* Form styling */
+    #add-event-form { 
+        display: none; 
+        margin-top: 15px; 
+    }
+    #add-event-form input[type="text"] { 
+        padding: 10px; 
+        font-size: 1.1em; 
+        width: 100%; 
+        max-width: 400px;
+        margin: 0 auto 10px auto; 
+        border: 1px solid #000; 
+        display: block;
+    }
+    #add-event-form button { 
+        padding: 10px 20px; 
+        font-size: 1.1em; 
+        cursor: pointer; 
+        background: #000;
+        color: #fff;
+        border: 1px solid #000;
+    }
+    #add-event-form button:hover {
+        background: #333;
+    }
+    
+    .like-btn {
+        background: none;
+        border: 1px solid #000;
+        border-radius: 2px;
+        cursor: pointer;
+        padding: 4px 10px;
+        margin-left: 10px;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    .like-btn:hover:not(:disabled) { background: #eee; }
+    .like-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.3;
+        border-color: #ccc;
+    }
 </style>
 </head>
 <body>
 
-    <h1>mix it up</h1>
+    <h1>mix it up</h1>
 
-    <a href="/about" class="btn-outline">Learn how it works &gt;&gt;</a>
+    <a href="/about" class="btn-outline">Learn how it works &gt;&gt;</a>
 
-    <div class="event-options-container">
-        <table id="event-table">
-            <thead>
-                <tr>
-                </tr>
-            </thead>
-            </table>
+    <div class="event-options-container">
+        <table id="event-table">
+            <thead>
+                <tr>
+                </tr>
+            </thead>
+        </table>
 
-        <div class="center-btn-container">
-            <button id="add-event-btn" class="btn-outline">Add event</button>
-            
-            <div id="add-event-form">
-                <input type="text" id="new-event-title" placeholder="Event Title (e.g. Movie Night)">
-                <input type="text" id="new-event-text" placeholder="Enter event details...">
-                <button id="submit-event-btn">Enter</button>
-            </div>
-        </div>
-    </div>
+        <div class="center-btn-container">
+            <button id="add-event-btn" class="btn-outline">Add event</button>
+            
+            <div id="add-event-form">
+                <input type="text" id="new-event-title" placeholder="Event Title (e.g. Movie Night)">
+                <input type="text" id="new-event-text" placeholder="Enter event details...">
+                <button id="submit-event-btn">Enter</button>
+            </div>
+        </div>
+    </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBI_1847xtDLdHzf18ZVAPaeQC0JyKYrVs",
-            authDomain: "mixitup-390a3.firebaseapp.com",
-            projectId: "mixitup-390a3",
-            storageBucket: "mixitup-390a3.firebasestorage.app",
-            messagingSenderId: "1088562427057",
-            appId: "1:1088562427057:web:64b7dd6a208df1968b1e90",
-            measurementId: "G-XMJ8CE6XRM"
-        };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBI_1847xtDLdHzf18ZVAPaeQC0JyKYrVs",
+            authDomain: "mixitup-390a3.firebaseapp.com",
+            projectId: "mixitup-390a3",
+            storageBucket: "mixitup-390a3.firebasestorage.app",
+            messagingSenderId: "1088562427057",
+            appId: "1:1088562427057:web:64b7dd6a208df1968b1e90",
+            measurementId: "G-XMJ8CE6XRM"
+        };
 
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
 
-        const addEventBtn = document.getElementById('add-event-btn');
-        const addEventForm = document.getElementById('add-event-form');
-        const submitEventBtn = document.getElementById('submit-event-btn');
-        const newEventTitle = document.getElementById('new-event-title');
-        const newEventText = document.getElementById('new-event-text');
-        const eventTable = document.getElementById('event-table');
+        const addEventBtn = document.getElementById('add-event-btn');
+        const addEventForm = document.getElementById('add-event-form');
+        const submitEventBtn = document.getElementById('submit-event-btn');
+        const newEventTitle = document.getElementById('new-event-title');
+        const newEventText = document.getElementById('new-event-text');
+        const eventTable = document.getElementById('event-table');
 
-        function getLikedEvents() {
-            return JSON.parse(localStorage.getItem('likedEvents') || '[]');
-        }
+        function getLikedEvents() {
+            return JSON.parse(localStorage.getItem('likedEvents') || '[]');
+        }
 
-        addEventBtn.addEventListener('click', () => {
-            addEventBtn.style.display = 'none';
-            addEventForm.style.display = 'block';
-            newEventTitle.focus();
-        });
+        addEventBtn.addEventListener('click', () => {
+            addEventBtn.style.display = 'none';
+            addEventForm.style.display = 'block';
+            newEventTitle.focus();
+        });
 
-        async function handleLike(eventId, likeBtn, ratingSpan) {
-            const likedEvents = getLikedEvents();
-            if (likedEvents.includes(eventId)) return;
+        async function handleLike(eventId, likeBtn, ratingSpan) {
+            const likedEvents = getLikedEvents();
+            if (likedEvents.includes(eventId)) return;
 
-            try {
-                likeBtn.disabled = true;
-                const eventRef = doc(db, "events", eventId);
-                
-                await updateDoc(eventRef, {
-                    rating: increment(1)
-                });
+            try {
+                likeBtn.disabled = true;
+                const eventRef = doc(db, "events", eventId);
+                
+                await updateDoc(eventRef, {
+                    rating: increment(1)
+                });
 
-                ratingSpan.innerText = parseInt(ratingSpan.innerText) + 1;
-                likedEvents.push(eventId);
-                localStorage.setItem('likedEvents', JSON.stringify(likedEvents));
-                
-            } catch (error) {
-                console.error("Error updating rating: ", error);
-                likeBtn.disabled = false;
-                alert("Failed to like the event. Please try again.");
-            }
-        }
+                ratingSpan.innerText = parseInt(ratingSpan.innerText) + 1;
+                likedEvents.push(eventId);
+                localStorage.setItem('likedEvents', JSON.stringify(likedEvents));
+                
+            } catch (error) {
+                console.error("Error updating rating: ", error);
+                likeBtn.disabled = false;
+                alert("Failed to like the event. Please try again.");
+            }
+        }
 
-        async function loadEvents() {
-            try {
-                // Sorted by rating for the "Votes" leaderboard
-                const q = query(
-                    collection(db, "events"), 
-                    where("isActive", "==", true), 
-                    orderBy("rating", "desc")
-                );
-                
-                const querySnapshot = await getDocs(q);
-                const likedEvents = getLikedEvents();
-                
-                // Clear table but keep headers
-                eventTable.innerHTML = `
-                    <thead>
-                        <tr>
-                            <th>Event</th>
-                            <th class="right-align">Votes</th>
-                        </tr>
-                    </thead>
-                `;
+        async function loadEvents() {
+            try {
+                const q = query(
+                    collection(db, "events"), 
+                    where("isActive", "==", true), 
+                    orderBy("rating", "desc")
+                );
+                
+                const querySnapshot = await getDocs(q);
+                const likedEvents = getLikedEvents();
+                
+                eventTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th class="right-align">Votes</th>
+                        </tr>
+                    </thead>
+                `;
 
-                let isFirst = true;
+                let isFirst = true;
 
-                querySnapshot.forEach((docSnapshot) => {
-                    const data = docSnapshot.data();
-                    const eventId = docSnapshot.id;
-                    const isLiked = likedEvents.includes(eventId);
-                    
-                    // Format Date
-                    const eventDate = new Date(data.date);
-                    const timeString = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' @ ' + eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                querySnapshot.forEach((docSnapshot) => {
+                    const data = docSnapshot.data();
+                    const eventId = docSnapshot.id;
+                    const isLiked = likedEvents.includes(eventId);
+                    
+                    const eventDate = new Date(data.date);
+                    const timeString = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' @ ' + eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-                    // Create a tbody for each event so we can group the row and description
-                    const tbody = document.createElement('tbody');
-                    if (isFirst) {
-                        tbody.classList.add('top-voted');
-                        isFirst = false;
-                    }
+                    const tbody = document.createElement('tbody');
+                    if (isFirst) {
+                        tbody.classList.add('top-voted');
+                        isFirst = false;
+                    }
 
-                    tbody.innerHTML = `
-                        <tr class="event-row">
-                            <td>
-                                <span class="event-title">${data.eventTitle || 'Untitled Event'} <span class="expand-arrow">▼</span></span>
-                                <span class="time-stamp">Submitted: ${timeString}</span>
-                            </td>
-                            <td class="right-align">
-                                <span class="rating-val">${data.rating || 0}</span>
-                                <button class="like-btn" ${isLiked ? 'disabled' : ''}>▲</button>
-                            </td>
-                        </tr>
-                        <tr class="description-row">
-                            <td colspan="2">${data.eventDescription}</td>
-                        </tr>
-                    `;
-                    
-                    const mainRow = tbody.querySelector('.event-row');
-                    const likeBtn = tbody.querySelector('.like-btn');
-                    const ratingSpan = tbody.querySelector('.rating-val');
-                    
-                    // Toggle Description
-                    mainRow.addEventListener('click', (e) => {
-                        if (e.target.tagName === 'BUTTON') return; // Don't expand if they are clicking the vote button
-                        tbody.classList.toggle('expanded');
-                    });
+                    tbody.innerHTML = `
+                        <tr class="event-row">
+                            <td>
+                                <span class="event-title">${data.eventTitle || 'Untitled Event'} <span class="expand-arrow">▼</span></span>
+                                <span class="time-stamp">Submitted: ${timeString}</span>
+                            </td>
+                            <td class="right-align">
+                                <span class="rating-val">${data.rating || 0}</span>
+                                <button class="like-btn" ${isLiked ? 'disabled' : ''}>▲</button>
+                            </td>
+                        </tr>
+                        <tr class="description-row">
+                            <td colspan="2">${data.eventDescription}</td>
+                        </tr>
+                    `;
+                    
+                    const mainRow = tbody.querySelector('.event-row');
+                    const likeBtn = tbody.querySelector('.like-btn');
+                    const ratingSpan = tbody.querySelector('.rating-val');
+                    
+                    mainRow.addEventListener('click', (e) => {
+                        if (e.target.tagName === 'BUTTON') return; 
+                        tbody.classList.toggle('expanded');
+                    });
 
-                    likeBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        handleLike(eventId, likeBtn, ratingSpan);
-                    });
-                    
-                    eventTable.appendChild(tbody);
-                });
-            } catch (e) {
-                console.error("Error fetching events: ", e);
-                eventTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for index link.</td></tr></tbody>';
-            }
-        }
+                    likeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleLike(eventId, likeBtn, ratingSpan);
+                    });
+                    
+                    eventTable.appendChild(tbody);
+                });
+            } catch (e) {
+                console.error("Error fetching events: ", e);
+                eventTable.innerHTML += '<tbody><tr><td colspan="2" style="text-align: center; color: red;">Failed to load events. Check console for index link.</td></tr></tbody>';
+            }
+        }
 
-        async function submitEvent() {
-            const title = newEventTitle.value.trim();
-            const text = newEventText.value.trim();
-            
-            if (!title || !text) {
-                alert("Please provide both a title and description.");
-                return;
-            }
+        async function submitEvent() {
+            const title = newEventTitle.value.trim();
+            const text = newEventText.value.trim();
+            
+            if (!title || !text) {
+                alert("Please provide both a title and description.");
+                return;
+            }
 
-            try {
-                submitEventBtn.disabled = true;
+            try {
+                submitEventBtn.disabled = true;
 
-                await addDoc(collection(db, "events"), {
-                    date: new Date().toISOString(),
-                    eventTitle: title,
-                    eventDescription: text,
-                    isActive: false, 
-                    rating: 0
-                });
+                await addDoc(collection(db, "events"), {
+                    date: new Date().toISOString(),
+                    eventTitle: title,
+                    eventDescription: text,
+                    isActive: false, 
+                    rating: 0
+                });
 
-                alert("Event submitted successfully! It will appear on the board once approved.");
-                
-                newEventTitle.value = '';
-                newEventText.value = '';
-                addEventForm.style.display = 'none';
-                addEventBtn.style.display = 'inline-block';
-                
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                alert("Failed to save event. Check console for details.");
-            } finally {
-                submitEventBtn.disabled = false;
-            }
-        }
+                alert("Event submitted successfully! It will appear on the board once approved.");
+                
+                newEventTitle.value = '';
+                newEventText.value = '';
+                addEventForm.style.display = 'none';
+                addEventBtn.style.display = 'inline-block';
+                
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert("Failed to save event. Check console for details.");
+            } finally {
+                submitEventBtn.disabled = false;
+            }
+        }
 
-        submitEventBtn.addEventListener('click', submitEvent);
+        submitEventBtn.addEventListener('click', submitEvent);
 
-        newEventText.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                submitEvent();
-            }
-        });
+        newEventText.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitEvent();
+            }
+        });
 
-        loadEvents();
-    </script>
+        loadEvents();
+    </script>
 </body>
 </html>
