@@ -88,6 +88,21 @@
         color: white;
         border: 2px solid black;
     }
+    
+    /* New styles for like button */
+    .like-btn {
+        background: none;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 4px 8px;
+        margin-left: 10px;
+    }
+    .like-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        background: #eee;
+    }
 </style>
 </head>
 <body>
@@ -126,10 +141,15 @@
     </div>
 
     <script type="module">
-        // 1. Firebase Imports (Added getDocs, query, orderBy)
+        // 1. Firebase Imports (Added doc, updateDoc, increment)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
+
+        // --- CONSTANTS ---
+        const MAX_EVENT_LENGTH = 500;
+        const RATE_LIMIT_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
+        const PROFANITY_LIST = [""]; // Update with actual words
 
         // 2. Firebase Configuration
         const firebaseConfig = {
@@ -154,6 +174,21 @@
         const newEventText = document.getElementById('new-event-text');
         const eventList = document.getElementById('event-list');
 
+        // Helper to check if user has liked an event
+        function getLikedEvents() {
+            return JSON.parse(localStorage.getItem('likedEvents') || '[]');
+        }
+
+        // Helper to check profanity
+        function containsProfanity(text) {
+            const lowerText = text.toLowerCase();
+            // Uses word boundaries to avoid false positives (e.g. "scunthorpe")
+            return PROFANITY_LIST.some(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(lowerText);
+            });
+        }
+
         // Toggle text box visibility
         addEventBtn.addEventListener('click', () => {
             addEventBtn.style.display = 'none';
@@ -161,27 +196,63 @@
             newEventText.focus();
         });
 
+        // Function to handle liking an event
+        async function handleLike(eventId, likeBtn, ratingSpan) {
+            const likedEvents = getLikedEvents();
+            
+            if (likedEvents.includes(eventId)) return;
+
+            try {
+                likeBtn.disabled = true;
+                const eventRef = doc(db, "events", eventId);
+                
+                // Atomically increment the rating by 1
+                await updateDoc(eventRef, {
+                    rating: increment(1)
+                });
+
+                // Update UI and local storage
+                ratingSpan.innerText = parseInt(ratingSpan.innerText) + 1;
+                likedEvents.push(eventId);
+                localStorage.setItem('likedEvents', JSON.stringify(likedEvents));
+                
+            } catch (error) {
+                console.error("Error updating rating: ", error);
+                likeBtn.disabled = false; // Re-enable if it failed
+                alert("Failed to like the event. Please try again.");
+            }
+        }
+
         // Function to fetch and render events on page load
         async function loadEvents() {
             try {
-                // Query the events collection, sort by date newest first
                 const q = query(collection(db, "events"), orderBy("date", "desc"));
                 const querySnapshot = await getDocs(q);
+                const likedEvents = getLikedEvents();
                 
-                // Clear the "Loading..." text
                 eventList.innerHTML = '';
 
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
+                querySnapshot.forEach((docSnapshot) => {
+                    const data = docSnapshot.data();
+                    const eventId = docSnapshot.id;
                     
-                    // Only display if the event is active
                     if (data.isActive) {
                         const newRow = document.createElement('tr');
+                        const isLiked = likedEvents.includes(eventId);
+                        
                         newRow.innerHTML = `
                             <td>${data.eventDescription}</td>
                             <td class="right-align">--</td>
-                            <td class="right-align">${data.rating}</td>
+                            <td class="right-align">
+                                <span class="rating-val">${data.rating || 0}</span>
+                                <button class="like-btn" ${isLiked ? 'disabled' : ''}>👍</button>
+                            </td>
                         `;
+                        
+                        const likeBtn = newRow.querySelector('.like-btn');
+                        const ratingSpan = newRow.querySelector('.rating-val');
+                        
+                        likeBtn.addEventListener('click', () => handleLike(eventId, likeBtn, ratingSpan));
                         eventList.appendChild(newRow);
                     }
                 });
@@ -195,38 +266,67 @@
         async function submitEvent() {
             const text = newEventText.value.trim();
             
-            if (text) {
-                try {
-                    submitEventBtn.disabled = true;
+            // --- VALIDATION FILTERS ---
+            if (!text) return;
 
-                    const docRef = await addDoc(collection(db, "events"), {
-                        date: new Date().toISOString(),
-                        eventDescription: text,
-                        isActive: true,
-                        rating: 0
-                    });
-                    
-                    // Update the UI immediately without requiring a page refresh
-                    const newRow = document.createElement('tr');
-                    // Insert at the top of the list
-                    newRow.innerHTML = `
-                        <td>${text}</td>
-                        <td class="right-align">--</td>
-                        <td class="right-align">0</td>
-                    `;
-                    eventList.insertBefore(newRow, eventList.firstChild);
+            if (text.length > MAX_EVENT_LENGTH) {
+                alert(`Description rejected: Must be under ${MAX_EVENT_LENGTH} characters. Currently ${text.length}.`);
+                return;
+            }
 
-                    // Reset state
-                    newEventText.value = '';
-                    addEventForm.style.display = 'none';
-                    addEventBtn.style.display = 'inline-block';
-                    
-                } catch (e) {
-                    console.error("Error adding document: ", e);
-                    alert("Failed to save event. Check console for details.");
-                } finally {
-                    submitEventBtn.disabled = false;
-                }
+            if (containsProfanity(text)) {
+                alert("Description rejected: Inappropriate language detected.");
+                return;
+            }
+
+            const lastSubmissionTime = localStorage.getItem('lastSubmissionTime');
+            if (lastSubmissionTime && (Date.now() - parseInt(lastSubmissionTime) < RATE_LIMIT_MS)) {
+                const minutesLeft = Math.ceil((RATE_LIMIT_MS - (Date.now() - parseInt(lastSubmissionTime))) / 60000);
+                alert(`Submission rejected: Please wait ${minutesLeft} more minute(s) before submitting another event.`);
+                return;
+            }
+            // --------------------------
+
+            try {
+                submitEventBtn.disabled = true;
+
+                const docRef = await addDoc(collection(db, "events"), {
+                    date: new Date().toISOString(),
+                    eventDescription: text,
+                    isActive: true,
+                    rating: 0
+                });
+                
+                // Update local storage for rate limiting
+                localStorage.setItem('lastSubmissionTime', Date.now().toString());
+
+                // Update the UI immediately
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${text}</td>
+                    <td class="right-align">--</td>
+                    <td class="right-align">
+                        <span class="rating-val">0</span>
+                        <button class="like-btn">👍</button>
+                    </td>
+                `;
+                
+                const likeBtn = newRow.querySelector('.like-btn');
+                const ratingSpan = newRow.querySelector('.rating-val');
+                likeBtn.addEventListener('click', () => handleLike(docRef.id, likeBtn, ratingSpan));
+                
+                eventList.insertBefore(newRow, eventList.firstChild);
+
+                // Reset state
+                newEventText.value = '';
+                addEventForm.style.display = 'none';
+                addEventBtn.style.display = 'inline-block';
+                
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert("Failed to save event. Check console for details.");
+            } finally {
+                submitEventBtn.disabled = false;
             }
         }
 
