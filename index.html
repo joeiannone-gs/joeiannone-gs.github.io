@@ -68,7 +68,7 @@
         border-radius: 12px;
         padding: 15px 10px 5px 10px;
         margin-bottom: 10px; 
-        border: 2px solid #000; /* Pure greyscale border */
+        border: 2px solid #000;
         display: none; 
     }
     .top-three-title {
@@ -77,7 +77,7 @@
         text-align: center;
         margin-bottom: 10px;
         color: #000; 
-        text-transform: lowercase; /* Forced lowercase */
+        text-transform: lowercase;
         letter-spacing: 1px;
     }
     
@@ -112,19 +112,36 @@
     
     .description-row { display: none; background: #f7f7f7; }
     
-    /* Updated description row for left alignment and padding */
     .description-row td { 
-        padding: 15px 25px 25px 25px; /* Added spacing */
+        padding: 15px 25px 25px 25px;
         color: #444; 
         border-bottom: 1px solid #eee; 
-        text-align: left; /* Forced left align */
-        line-height: 1.6; /* Better readability */
+        text-align: left; 
+        line-height: 1.6; 
     }
     
-    .expand-arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.8em; margin-left: 8px; color: #888; }
-    .expanded .description-row { display: table-row; }
-    .expanded .expand-arrow { transform: rotate(180deg); }
+    /* New Learn More Button */
+    .learn-more-btn {
+        display: inline-block;
+        margin-left: 10px;
+        padding: 2px 8px;
+        font-size: 0.7em;
+        font-weight: normal;
+        border: 1px solid #000;
+        border-radius: 2px;
+        color: #000;
+        text-transform: lowercase;
+        vertical-align: middle;
+        position: relative;
+        top: -1px;
+        transition: background 0.2s, color 0.2s;
+    }
+    .expanded .learn-more-btn {
+        background: #000;
+        color: #fff;
+    }
     
+    .expanded .description-row { display: table-row; }
     tbody.expanded .event-row td { border-bottom: none; }
 
     .center-btn-container { text-align: center; }
@@ -172,7 +189,7 @@
     }
     .like-btn:hover:not(:disabled) { background: #eee; }
     
-    /* Styling for when the user has already voted - Solid Black */
+    /* Styling for when the user has already voted */
     .like-btn.voted {
         background: #000;
         color: #fff;
@@ -363,7 +380,8 @@
                     tbody.innerHTML = `
                         <tr class="event-row">
                             <td>
-                                <span class="event-title">${data.eventTitle || 'untitled event'} <span class="expand-arrow">▼</span></span>
+                                <span class="event-title">${data.eventTitle || 'untitled event'}</span>
+                                <span class="learn-more-btn">learn more</span>
                                 <span class="time-stamp">submitted: ${timeString}</span>
                             </td>
                             <td>
