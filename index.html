@@ -11,7 +11,7 @@
         margin: 0; 
         padding: 40px 20px; 
         color: #000;
-        background: #fff;
+        background: #fce7c7; /* Updated background color */
     }
     h1 { 
         font-size: 5em; 
@@ -62,9 +62,9 @@
         font-size: 1.1em; 
     }
 
-    /* Top Three Wrapper - Greyscale */
+    /* Top Three Wrapper */
     .top-three-wrapper {
-        background: #fff;
+        background: #fff; /* Kept white for contrast against the new background */
         border-radius: 12px;
         padding: 15px 10px 5px 10px;
         margin-bottom: 10px; 
@@ -90,12 +90,12 @@
     td { 
         padding: 15px 10px; 
         font-size: 1em; 
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid rgba(0,0,0,0.1); /* Softened border to blend better */
     }
     
     /* Accordion & Row Styling */
     .event-row { cursor: pointer; }
-    .event-row:hover { background: #f3f3f3; }
+    .event-row:hover { background: rgba(255,255,255,0.4); } /* Adjusted hover for new bg */
     
     .event-title { 
         font-weight: bold; 
@@ -115,12 +115,12 @@
         display: block;
     }
     
-    .description-row { display: none; background: #f7f7f7; }
+    .description-row { display: none; background: rgba(255,255,255,0.6); }
     
     .description-row td { 
         padding: 15px 25px 25px 25px;
-        color: #444; 
-        border-bottom: 1px solid #eee; 
+        color: #333; 
+        border-bottom: 1px solid rgba(0,0,0,0.1); 
         text-align: left; 
         line-height: 1.6; 
     }
@@ -179,7 +179,7 @@
         background: #333;
     }
     
-    /* Like Button Updates - Greyscale Theme */
+    /* Like Button Updates */
     .like-btn {
         background: none;
         border: 1px solid #000;
@@ -192,7 +192,7 @@
         color: #000;
         transition: all 0.2s;
     }
-    .like-btn:hover:not(:disabled) { background: #eee; }
+    .like-btn:hover:not(:disabled) { background: rgba(255,255,255,0.8); }
     
     /* Styling for when the user has already voted */
     .like-btn.voted {
