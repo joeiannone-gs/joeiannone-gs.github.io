@@ -29,7 +29,7 @@
         text-decoration: none;
         color: #140f07;
         display: inline-block;
-        margin-bottom: 30px; /* Reduced slightly to make room for email box */
+        margin-bottom: 30px; 
         text-transform: lowercase;
         transition: background 0.2s;
     }
@@ -37,12 +37,15 @@
         background: rgba(20, 15, 7, 0.1);
     }
     
-    /* New Email Subscription Styles */
+    /* Email Container Refactored with Flexbox */
     .email-container {
+        display: flex;
+        justify-content: center;
+        align-items: stretch; /* Forces children to match height */
         margin-bottom: 50px;
     }
     .email-container input[type="email"] {
-        padding: 11px;
+        padding: 12px 15px;
         font-size: 1.1em;
         width: 100%;
         max-width: 280px;
@@ -52,6 +55,8 @@
         text-transform: lowercase;
         border-right: none;
         outline: none;
+        box-sizing: border-box;
+        border-radius: 0; /* Normalizes iOS styling */
     }
     .email-container input[type="email"]::placeholder {
         color: rgba(20, 15, 7, 0.5);
@@ -65,8 +70,8 @@
         border: 1px solid #140f07;
         text-transform: lowercase;
         transition: background 0.2s;
-        margin-left: -5px; /* Connects the input and button visually */
-        vertical-align: top;
+        box-sizing: border-box;
+        border-radius: 0; 
     }
     .email-container button:hover {
         background: rgba(20, 15, 7, 0.8);
@@ -78,7 +83,6 @@
         margin: 0 auto;
     }
 
-    /* Table alignment magic for continuity */
     table { 
         width: 100%; 
         border-collapse: collapse; 
@@ -98,7 +102,6 @@
         font-size: 1.1em; 
     }
 
-    /* Top Three Wrapper */
     .top-three-wrapper {
         background: transparent;
         border-radius: 12px;
@@ -129,7 +132,6 @@
         border-bottom: 1px solid rgba(20, 15, 7, 0.1);
     }
     
-    /* Accordion & Row Styling */
     .event-row { cursor: pointer; }
     .event-row:hover { background: rgba(20, 15, 7, 0.05); }
     
@@ -139,7 +141,6 @@
         text-transform: lowercase; 
     }
     
-    /* Hide timestamp by default, show on expand */
     .time-stamp { 
         display: none; 
         font-size: 0.8em; 
@@ -161,7 +162,6 @@
         line-height: 1.6; 
     }
     
-    /* View Idea Button */
     .view-idea-btn {
         display: inline-block;
         margin-left: 10px;
@@ -187,7 +187,6 @@
 
     .center-btn-container { text-align: center; }
 
-    /* Form styling */
     #add-event-form { 
         display: none; 
         margin-top: 15px; 
@@ -221,7 +220,6 @@
         background: rgba(20, 15, 7, 0.8);
     }
     
-    /* Like Button Updates */
     .like-btn {
         background: transparent;
         border: 1px solid #140f07;
@@ -236,7 +234,6 @@
     }
     .like-btn:hover:not(:disabled) { background: rgba(20, 15, 7, 0.1); }
     
-    /* Styling for when the user has already voted */
     .like-btn.voted {
         background: #140f07;
         color: #fce7c7;
@@ -256,7 +253,7 @@
 
     <div class="email-container">
         <input type="email" id="new-email-input" placeholder="enter your email...">
-        <button id="submit-email-btn">subscribe</button>
+        <button id="submit-email-btn">submit</button>
     </div>
 
     <div class="event-options-container">
@@ -319,7 +316,7 @@
         const restEventsTable = document.getElementById('event-table');
         const countdownDisplay = document.getElementById('countdown-display');
 
-        // New Email Elements
+        // Email Elements
         const submitEmailBtn = document.getElementById('submit-email-btn');
         const newEmailInput = document.getElementById('new-email-input');
 
@@ -521,7 +518,7 @@
             }
         }
 
-        // --- NEW EMAIL SUBMISSION LOGIC ---
+        // --- EMAIL SUBMISSION LOGIC ---
         async function submitEmail() {
             const emailValue = newEmailInput.value.trim();
             
@@ -541,12 +538,12 @@
                     dateSubmitted: new Date().toISOString()
                 });
 
-                alert("subscribed successfully!");
+                alert("submitted successfully!");
                 newEmailInput.value = '';
                 
             } catch (e) {
                 console.error("error saving email: ", e);
-                alert("failed to subscribe. check console for details.");
+                alert("failed to submit. check console for details.");
             } finally {
                 submitEmailBtn.disabled = false;
             }
