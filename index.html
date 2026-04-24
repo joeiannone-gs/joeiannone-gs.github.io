@@ -29,12 +29,47 @@
         text-decoration: none;
         color: #140f07;
         display: inline-block;
-        margin-bottom: 50px;
+        margin-bottom: 30px; /* Reduced slightly to make room for email box */
         text-transform: lowercase;
         transition: background 0.2s;
     }
     .btn-outline:hover {
         background: rgba(20, 15, 7, 0.1);
+    }
+    
+    /* New Email Subscription Styles */
+    .email-container {
+        margin-bottom: 50px;
+    }
+    .email-container input[type="email"] {
+        padding: 11px;
+        font-size: 1.1em;
+        width: 100%;
+        max-width: 280px;
+        border: 1px solid #140f07;
+        background: transparent;
+        color: #140f07;
+        text-transform: lowercase;
+        border-right: none;
+        outline: none;
+    }
+    .email-container input[type="email"]::placeholder {
+        color: rgba(20, 15, 7, 0.5);
+    }
+    .email-container button {
+        padding: 12px 20px;
+        font-size: 1.1em;
+        cursor: pointer;
+        background: #140f07;
+        color: #fce7c7;
+        border: 1px solid #140f07;
+        text-transform: lowercase;
+        transition: background 0.2s;
+        margin-left: -5px; /* Connects the input and button visually */
+        vertical-align: top;
+    }
+    .email-container button:hover {
+        background: rgba(20, 15, 7, 0.8);
     }
     
     .event-options-container {
@@ -219,6 +254,11 @@
 
     <a href="/about" class="btn-outline">learn how it works &gt;&gt;</a>
 
+    <div class="email-container">
+        <input type="email" id="new-email-input" placeholder="enter your email...">
+        <button id="submit-email-btn">subscribe</button>
+    </div>
+
     <div class="event-options-container">
 
         <div id="top-three-wrapper" class="top-three-wrapper">
@@ -267,6 +307,7 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
+        // Elements
         const addEventBtn = document.getElementById('add-event-btn');
         const addEventForm = document.getElementById('add-event-form');
         const submitEventBtn = document.getElementById('submit-event-btn');
@@ -277,6 +318,10 @@
         const topEventsTable = document.getElementById('top-events-table');
         const restEventsTable = document.getElementById('event-table');
         const countdownDisplay = document.getElementById('countdown-display');
+
+        // New Email Elements
+        const submitEmailBtn = document.getElementById('submit-email-btn');
+        const newEmailInput = document.getElementById('new-email-input');
 
         // Calculates the timestamp for the next occurrence of the target day/time
         function getNextTargetDate() {
@@ -475,6 +520,46 @@
                 submitEventBtn.disabled = false;
             }
         }
+
+        // --- NEW EMAIL SUBMISSION LOGIC ---
+        async function submitEmail() {
+            const emailValue = newEmailInput.value.trim();
+            
+            // Basic regex for email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!emailValue || !emailRegex.test(emailValue)) {
+                alert("please enter a valid email address.");
+                return;
+            }
+
+            try {
+                submitEmailBtn.disabled = true;
+
+                await addDoc(collection(db, "emails"), {
+                    emailText: emailValue,
+                    dateSubmitted: new Date().toISOString()
+                });
+
+                alert("subscribed successfully!");
+                newEmailInput.value = '';
+                
+            } catch (e) {
+                console.error("error saving email: ", e);
+                alert("failed to subscribe. check console for details.");
+            } finally {
+                submitEmailBtn.disabled = false;
+            }
+        }
+
+        submitEmailBtn.addEventListener('click', submitEmail);
+
+        newEmailInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitEmail();
+            }
+        });
+        // ----------------------------------
 
         submitEventBtn.addEventListener('click', submitEvent);
 
