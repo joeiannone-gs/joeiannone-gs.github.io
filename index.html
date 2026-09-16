@@ -95,6 +95,60 @@ fn thickness(p : vec3f, l : vec3f) -> f32 {
   return clamp(s / 4.0, 0.0, 1.0);
 }
 
+fn irisHue(i : i32) -> vec3f {
+  if (i == 0) { return vec3f(0.16, 0.38, 0.62); }   // blue
+  if (i == 1) { return vec3f(0.40, 0.25, 0.10); }   // brown
+  if (i == 2) { return vec3f(0.24, 0.44, 0.26); }   // green
+  if (i == 3) { return vec3f(0.46, 0.34, 0.14); }   // amber
+  if (i == 4) { return vec3f(0.34, 0.40, 0.46); }   // grey
+  if (i == 5) { return vec3f(0.30, 0.22, 0.34); }   // dark
+  if (i == 6) { return vec3f(0.44, 0.38, 0.18); }   // hazel
+  return vec3f(0.26, 0.48, 0.56);                   // pale blue
+}
+
+// Six irises drift over the goo. Each one is anchored to the surface
+// along a slowly moving direction out of the centre, and measured by
+// true distance from that anchor: an angular measure smears the disc
+// wherever the surface is not sphere-like, which the necks are not.
+fn eyes(base : vec3f, p : vec3f, n : vec3f, v : vec3f, t : f32) -> vec3f {
+  var col = base;
+  for (var i = 0; i < 8; i++) {
+    let fi = f32(i);
+    let a = t * (0.11 + 0.035 * fi) + fi * 2.399;
+    let b = sin(t * (0.07 + 0.02 * fi) + fi * 1.7);
+    let c = vec3f(cos(a) * cos(b), sin(b), sin(a) * cos(b));
+    if (dot(n, c) < 0.45) { continue; }   // this eye is not on this part of the surface
+
+    // Where does the surface sit along c? Two Newton steps on the
+    // distance field, which is near enough radial out here.
+    var s = 0.75;
+    s = clamp(s - map(c * s), 0.25, 1.40);
+    s = clamp(s - map(c * s), 0.25, 1.40);
+    let anchor = c * s;
+
+    let d = p - anchor;
+    let r = length(d) / (0.145 + 0.035 * sin(fi * 2.1));   // 1.0 at the outer edge, sizes vary
+    if (r > 1.08) { continue; }
+
+    let refUp = select(vec3f(0.0, 1.0, 0.0), vec3f(1.0, 0.0, 0.0), abs(c.y) > 0.9);
+    let tx = normalize(cross(refUp, c));
+    let ty = cross(c, tx);
+    let ang = atan2(dot(d, ty), dot(d, tx));
+
+    let hue = irisHue(i);
+    let fibre = 0.5 + 0.5 * sin(ang * 18.0 + sin(ang * 7.0 + fi) * 1.6);
+    var eye = mix(hue * 0.55, hue * 1.30, fibre);                          // radial fibres
+    eye = mix(eye, hue * 0.40, smoothstep(0.45, 1.0, r));                  // deepens outward
+    eye = mix(eye, vec3f(0.04, 0.04, 0.05), smoothstep(0.85, 1.0, r));     // limbal ring
+    eye = mix(vec3f(0.015, 0.015, 0.02), eye, smoothstep(0.28, 0.38, r));  // pupil
+    // An eye seen edge-on is a foreshortened smear, so let it sink back
+    // into the goo instead.
+    let face = smoothstep(0.25, 0.55, dot(n, v));
+    col = mix(col, eye, (1.0 - smoothstep(0.98, 1.06, r)) * face);
+  }
+  return col;
+}
+
 // Dragging rotates the goo. Rather than rotating the field at every
 // sample, rays are moved into the goo's own space and shaded there:
 // dot products are rotation invariant, so only the sky term and the
@@ -140,8 +194,8 @@ fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
       let tp = (-1.05 - ro.y) / rd.y;
       if (tp > 0.0) {
         let h = ro + rd * tp;
-        let a = 0.28 * exp(-1.9 * dot(h.xz, h.xz)) * exp(-0.02 * tp * tp);
-        return vec4f(vec3f(0.05, 0.13, 0.07) * a, a);
+        let a = 0.34 * exp(-1.9 * dot(h.xz, h.xz)) * exp(-0.02 * tp * tp);
+        return vec4f(vec3f(0.06, 0.07, 0.09) * a, a);
       }
     }
     return vec4f(0.0, 0.0, 0.0, 0.0);
@@ -163,18 +217,18 @@ fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
   let thin = 1.0 - thickness(pos, lo);
   let sss = pow(thin, 2.0) * (0.35 + 0.65 * back);
 
-  let deep = vec3f(0.012, 0.085, 0.030);
-  let body = vec3f(0.075, 0.430, 0.130);
-  let glow = vec3f(0.450, 0.950, 0.300);
-
-  var col = mix(deep, body, dif) * occ;
-  col = col + body * amb * 0.22 * occ;
-  col = col + glow * sss * 0.45 * occ;
-  col = col + vec3f(0.30, 0.80, 0.40) * fre * 0.38;
-  col = col + vec3f(1.0, 1.0, 0.96) * (tight * 1.00 + broad * 0.10);
-  // Cool fill from the left so the shadow side still reads as a surface.
+  // White goo, with the irises worked into the albedo so the lighting
+  // and the wet highlight run over them instead of sitting on top.
+  let albedo = eyes(vec3f(0.90, 0.91, 0.93), pos, n, v, u.time);
   let fill = clamp(dot(n, Rt * normalize(vec3f(-0.7, 0.1, 0.35))), 0.0, 1.0);
-  col = col + vec3f(0.06, 0.16, 0.12) * fill * occ;
+
+  var col = albedo * mix(0.16, 1.0, dif) * occ;
+  col = col + albedo * vec3f(0.55, 0.62, 0.78) * amb * 0.30 * occ;   // cool sky fill
+  col = col + albedo * vec3f(1.00, 0.96, 0.92) * sss * 0.40 * occ;   // milky, not glassy
+  col = col + albedo * vec3f(0.30, 0.34, 0.42) * fill * 0.80 * occ;
+  // A white blob on a white page only reads if its edge turns down.
+  col = col * (1.0 - 0.30 * fre);
+  col = col + vec3f(1.00, 1.00, 0.98) * (tight * 0.95 + broad * 0.03);
 
   col = pow(clamp(col, vec3f(0.0), vec3f(1.0)), vec3f(1.0 / 2.2));
   return vec4f(col, 1.0);
@@ -256,6 +310,52 @@ float thickness(vec3 p, vec3 l) {
   return clamp(s / 4.0, 0.0, 1.0);
 }
 
+vec3 irisHue(int i) {
+  if (i == 0) { return vec3(0.16, 0.38, 0.62); }
+  if (i == 1) { return vec3(0.40, 0.25, 0.10); }
+  if (i == 2) { return vec3(0.24, 0.44, 0.26); }
+  if (i == 3) { return vec3(0.46, 0.34, 0.14); }
+  if (i == 4) { return vec3(0.34, 0.40, 0.46); }
+  if (i == 5) { return vec3(0.30, 0.22, 0.34); }
+  if (i == 6) { return vec3(0.44, 0.38, 0.18); }
+  return vec3(0.26, 0.48, 0.56);
+}
+
+vec3 eyes(vec3 base, vec3 p, vec3 n, vec3 v, float t) {
+  vec3 col = base;
+  for (int i = 0; i < 8; i++) {
+    float fi = float(i);
+    float a = t * (0.11 + 0.035 * fi) + fi * 2.399;
+    float b = sin(t * (0.07 + 0.02 * fi) + fi * 1.7);
+    vec3 c = vec3(cos(a) * cos(b), sin(b), sin(a) * cos(b));
+    if (dot(n, c) < 0.45) { continue; }
+
+    float s = 0.75;
+    s = clamp(s - map(c * s), 0.25, 1.40);
+    s = clamp(s - map(c * s), 0.25, 1.40);
+    vec3 anchor = c * s;
+
+    vec3 d = p - anchor;
+    float r = length(d) / (0.145 + 0.035 * sin(fi * 2.1));
+    if (r > 1.08) { continue; }
+
+    vec3 refUp = abs(c.y) > 0.9 ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
+    vec3 tx = normalize(cross(refUp, c));
+    vec3 ty = cross(c, tx);
+    float ang = atan(dot(d, ty), dot(d, tx));
+
+    vec3 hue = irisHue(i);
+    float fibre = 0.5 + 0.5 * sin(ang * 18.0 + sin(ang * 7.0 + fi) * 1.6);
+    vec3 eye = mix(hue * 0.55, hue * 1.30, fibre);
+    eye = mix(eye, hue * 0.40, smoothstep(0.45, 1.0, r));
+    eye = mix(eye, vec3(0.04, 0.04, 0.05), smoothstep(0.85, 1.0, r));
+    eye = mix(vec3(0.015, 0.015, 0.02), eye, smoothstep(0.28, 0.38, r));
+    float face = smoothstep(0.25, 0.55, dot(n, v));
+    col = mix(col, eye, (1.0 - smoothstep(0.98, 1.06, r)) * face);
+  }
+  return col;
+}
+
 mat3 objectToWorld(float yaw, float pitch) {
   float cy = cos(yaw);
   float sy = sin(yaw);
@@ -289,8 +389,8 @@ void main() {
       float tp = (-1.05 - ro.y) / rd.y;
       if (tp > 0.0) {
         vec3 h = ro + rd * tp;
-        float a = 0.28 * exp(-1.9 * dot(h.xz, h.xz)) * exp(-0.02 * tp * tp);
-        fragColor = vec4(vec3(0.05, 0.13, 0.07) * a, a);
+        float a = 0.34 * exp(-1.9 * dot(h.xz, h.xz)) * exp(-0.02 * tp * tp);
+        fragColor = vec4(vec3(0.06, 0.07, 0.09) * a, a);
         return;
       }
     }
@@ -314,17 +414,15 @@ void main() {
   float thin = 1.0 - thickness(pos, lo);
   float sss = pow(thin, 2.0) * (0.35 + 0.65 * back);
 
-  vec3 deep = vec3(0.012, 0.085, 0.030);
-  vec3 body = vec3(0.075, 0.430, 0.130);
-  vec3 glow = vec3(0.450, 0.950, 0.300);
-
-  vec3 col = mix(deep, body, dif) * occ;
-  col = col + body * amb * 0.22 * occ;
-  col = col + glow * sss * 0.45 * occ;
-  col = col + vec3(0.30, 0.80, 0.40) * fre * 0.38;
-  col = col + vec3(1.0, 1.0, 0.96) * (tight * 1.00 + broad * 0.10);
+  vec3 albedo = eyes(vec3(0.90, 0.91, 0.93), pos, n, v, uTime);
   float fill = clamp(dot(n, Rt * normalize(vec3(-0.7, 0.1, 0.35))), 0.0, 1.0);
-  col = col + vec3(0.06, 0.16, 0.12) * fill * occ;
+
+  vec3 col = albedo * mix(0.16, 1.0, dif) * occ;
+  col = col + albedo * vec3(0.55, 0.62, 0.78) * amb * 0.30 * occ;
+  col = col + albedo * vec3(1.00, 0.96, 0.92) * sss * 0.40 * occ;
+  col = col + albedo * vec3(0.30, 0.34, 0.42) * fill * 0.80 * occ;
+  col = col * (1.0 - 0.30 * fre);
+  col = col + vec3(1.00, 1.00, 0.98) * (tight * 0.95 + broad * 0.03);
 
   col = pow(clamp(col, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2));
   fragColor = vec4(col, 1.0);
@@ -503,6 +601,7 @@ async function start() {
   // rather than scrolling the page.
   const RADIANS_PER_PIXEL = 0.008;
   const PITCH_LIMIT = 1.2;
+  const AUTO_SPIN = 0.12;     // radians a second: about a turn a minute
   const GLIDE_DECAY = 0.85;
   const GLIDE_TAKEUP = 0.4;   // a flick coasts a little, it does not fly off
   const GLIDE_TIMEOUT = 80;   // ms: let go after holding still and it stays put
@@ -581,8 +680,10 @@ async function start() {
     }
 
     if (!dragging) {
-      // Let a flick coast to a stop instead of stopping dead.
-      yaw = yaw + spinYaw;
+      // Turn slowly on its own, and let a flick coast to a stop on top
+      // of that. Clamp the step so returning to a hidden tab, where
+      // frames stop arriving, does not jump it round.
+      yaw = yaw + spinYaw + AUTO_SPIN * Math.min(dt, 50) / 1000;
       pitch = clampPitch(pitch + spinPitch);
       spinYaw = Math.abs(spinYaw) < 1e-4 ? 0 : spinYaw * GLIDE_DECAY;
       spinPitch = Math.abs(spinPitch) < 1e-4 ? 0 : spinPitch * GLIDE_DECAY;
@@ -597,7 +698,7 @@ async function start() {
 
 start().catch((err) => {
   canvas.remove();
-  fallback.textContent = 'The green goo needs WebGPU or WebGL2, which this browser did not provide (' + err.message + ').';
+  fallback.textContent = 'The goo needs WebGPU or WebGL2, which this browser did not provide (' + err.message + ').';
 });
 </script>
 </body>
