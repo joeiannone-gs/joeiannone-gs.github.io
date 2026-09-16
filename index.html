@@ -8,7 +8,7 @@
 <body>
 <h1>Joseph Iannone's website</h1>
 
-<canvas id="goo" width="520" height="520" style="width:520px;height:520px;max-width:100%"></canvas>
+<canvas id="goo" width="520" height="520" style="display:block;width:100%;max-width:520px"></canvas>
 <p id="goo-fallback"></p>
 
 <script type="module">
@@ -189,23 +189,72 @@ async function start() {
   let running = true;
   device.lost.then(() => { running = false; });
 
+  // Raymarching cost is per pixel, so the backing store gets a budget
+  // rather than just devicePixelRatio: a phone at dpr 3 would otherwise
+  // shade several times the pixels a desktop does.
+  const PIXEL_BUDGET = 1000000;
+  let quality = 1;
+
+  let lastW = 0, lastH = 0, lastQuality = 0;
+
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
-    const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
+    // Measuring forces layout, so only do it when something actually moved.
+    if (window.innerWidth === lastW && window.innerHeight === lastH && quality === lastQuality) {
+      return;
+    }
+    lastW = window.innerWidth;
+    lastH = window.innerHeight;
+    lastQuality = quality;
+
+    canvas.style.width = '100%';        // let layout report the width available
+    const available = Math.max(1, Math.round(canvas.clientWidth));
+    // Keep it square, and short enough to sit on screen with the heading
+    // even on a phone held sideways.
+    const css = Math.max(200, Math.min(available, Math.round(window.innerHeight * 0.72)));
+    canvas.style.width = css + 'px';
+    canvas.style.height = css + 'px';
+
+    let scale = Math.min(window.devicePixelRatio || 1, 2) * quality;
+    if (css * css * scale * scale > PIXEL_BUDGET) {
+      scale = Math.sqrt(PIXEL_BUDGET / (css * css));
+    }
+    const px = Math.max(1, Math.round(css * scale));
+    if (canvas.width !== px || canvas.height !== px) {
+      canvas.width = px;
+      canvas.height = px;
     }
   }
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', resize);
   resize();
 
   const start = performance.now();
-  function frame() {
+  let previous = start;
+  let slowFrames = 0;
+  let warmup = 20;
+
+  function frame(now) {
     if (!running) { return; }
+
+    // If the device can't hold a reasonable frame rate, shade fewer
+    // pixels instead of letting the whole page judder.
+    const dt = now - previous;
+    previous = now;
+    if (warmup > 0) {
+      warmup--;
+    } else if (dt > 26 && quality > 0.5) {
+      slowFrames++;
+      if (slowFrames > 30) {
+        quality = Math.max(0.5, quality - 0.15);
+        slowFrames = 0;
+        warmup = 20;
+      }
+    } else {
+      slowFrames = 0;
+    }
+
     resize();
-    const time = (performance.now() - start) / 1000;
+    const time = (now - start) / 1000;
     device.queue.writeBuffer(uniforms, 0, new Float32Array([canvas.width, canvas.height, time, 0]));
 
     const encoder = device.createCommandEncoder();
