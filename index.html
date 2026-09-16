@@ -15,7 +15,10 @@
 const canvas = document.getElementById('goo');
 const fallback = document.getElementById('goo-fallback');
 
-const shader = `
+// The goo is a raymarched signed-distance field. The same field and
+// shading exist twice below, once in WGSL for WebGPU and once in GLSL
+// for the WebGL2 fallback; keep them in step when editing.
+const WGSL = `
 struct Uniforms {
   res  : vec2f,
   time : f32,
@@ -32,9 +35,8 @@ fn blob(p : vec3f, c : vec3f, r : f32) -> f32 {
   return length(p - c) - r;
 }
 
-// Signed distance to the goo: a small core with four blobs swinging
-// out past it, welded by smin so they pull necks and lobes instead of
-// reading as one convex lump.
+// A small core with four blobs swinging out past it, welded by smin so
+// they pull necks and lobes instead of reading as one convex lump.
 fn map(p : vec3f) -> f32 {
   let t = u.time;
   var d = blob(p, vec3f(0.0, 0.0, 0.0), 0.42);
@@ -98,7 +100,7 @@ fn vs(@builtin(vertex_index) vi : u32) -> @builtin(position) vec4f {
 @fragment
 fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
   let q = (frag.xy * 2.0 - u.res) / min(u.res.x, u.res.y);
-  let uv = vec2f(q.x, -q.y);
+  let uv = vec2f(q.x, -q.y);   // WebGPU reports this pixel with y pointing down
 
   let ro = vec3f(0.0, 0.30, 3.0);
   let fwd = normalize(vec3f(0.0, 0.0, 0.0) - ro);
@@ -156,27 +158,159 @@ fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
 }
 `;
 
-async function start() {
+const GLSL_VERT = `#version 300 es
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)) * 2.0 - 1.0;
+  gl_Position = vec4(p, 0.0, 1.0);
+}
+`;
+
+const GLSL_FRAG = `#version 300 es
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+out vec4 fragColor;
+
+float smin(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+float blob(vec3 p, vec3 c, float r) {
+  return length(p - c) - r;
+}
+
+float map(vec3 p) {
+  float t = uTime;
+  float d = blob(p, vec3(0.0, 0.0, 0.0), 0.42);
+  d = smin(d, blob(p, vec3(0.52 * sin(t * 0.90), 0.40 * cos(t * 1.10), 0.34 * sin(t * 0.70)), 0.30), 0.34);
+  d = smin(d, blob(p, vec3(0.50 * cos(t * 0.70), 0.46 * sin(t * 0.80 + 1.7), 0.32 * cos(t * 1.30)), 0.27), 0.34);
+  d = smin(d, blob(p, vec3(0.44 * sin(t * 1.30 + 2.4), 0.44 * cos(t * 0.60 + 0.9), 0.38 * sin(t * 0.90 + 1.1)), 0.24), 0.32);
+  d = smin(d, blob(p, vec3(0.38 * cos(t * 1.05 + 4.1), 0.50 * sin(t * 0.95 + 3.3), 0.30 * cos(t * 0.85 + 2.2)), 0.20), 0.30);
+  d = d + 0.055 * sin(7.0 * p.x + t * 1.4) * sin(7.0 * p.y + t * 1.1) * sin(7.0 * p.z + t * 0.9)
+        + 0.020 * sin(12.0 * p.y - t * 1.7) * sin(12.0 * p.z + t * 1.2);
+  return d;
+}
+
+vec3 normalAt(vec3 p) {
+  vec2 e = vec2(0.0015, 0.0);
+  return normalize(vec3(
+    map(p + e.xyy) - map(p - e.xyy),
+    map(p + e.yxy) - map(p - e.yxy),
+    map(p + e.yyx) - map(p - e.yyx)));
+}
+
+float march(vec3 ro, vec3 rd) {
+  float t = 0.6;
+  for (int i = 0; i < 128; i++) {
+    float d = map(ro + rd * t);
+    if (d < 0.0012) { return t; }
+    t = t + d * 0.6;
+    if (t > 8.0) { break; }
+  }
+  return -1.0;
+}
+
+float ao(vec3 p, vec3 n) {
+  float occ = 0.0;
+  float sca = 1.0;
+  for (int i = 0; i < 5; i++) {
+    float h = 0.02 + 0.11 * float(i);
+    occ = occ + (h - map(p + n * h)) * sca;
+    sca = sca * 0.85;
+  }
+  return clamp(1.0 - 1.4 * occ, 0.0, 1.0);
+}
+
+float thickness(vec3 p, vec3 l) {
+  float s = 0.0;
+  for (int i = 1; i <= 4; i++) {
+    float h = 0.12 * float(i);
+    s = s + clamp(-map(p + l * h) / h, 0.0, 1.0);
+  }
+  return clamp(s / 4.0, 0.0, 1.0);
+}
+
+void main() {
+  vec2 q = (gl_FragCoord.xy * 2.0 - uRes) / min(uRes.x, uRes.y);
+  vec2 uv = q;   // gl_FragCoord already points y up, unlike WebGPU
+
+  vec3 ro = vec3(0.0, 0.30, 3.0);
+  vec3 fwd = normalize(vec3(0.0, 0.0, 0.0) - ro);
+  vec3 right = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+  vec3 up = cross(right, fwd);
+  vec3 rd = normalize(fwd * 1.9 + right * uv.x + up * uv.y);
+
+  vec3 l = normalize(vec3(0.55, 0.85, 0.45));
+  float tHit = march(ro, rd);
+
+  if (tHit < 0.0) {
+    if (rd.y < 0.0) {
+      float tp = (-1.05 - ro.y) / rd.y;
+      if (tp > 0.0) {
+        vec3 h = ro + rd * tp;
+        float a = 0.28 * exp(-1.9 * dot(h.xz, h.xz)) * exp(-0.02 * tp * tp);
+        fragColor = vec4(vec3(0.05, 0.13, 0.07) * a, a);
+        return;
+      }
+    }
+    fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    return;
+  }
+
+  vec3 pos = ro + rd * tHit;
+  vec3 n = normalAt(pos);
+  vec3 v = -rd;
+  vec3 hv = normalize(l + v);
+
+  float dif = clamp(dot(n, l), 0.0, 1.0);
+  float amb = 0.5 + 0.5 * n.y;
+  float ndh = clamp(dot(n, hv), 0.0, 1.0);
+  float tight = pow(ndh, 72.0);
+  float broad = pow(ndh, 10.0);
+  float fre = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 4.0);
+  float occ = ao(pos, n);
+  float back = clamp(dot(v, -l), 0.0, 1.0);
+  float thin = 1.0 - thickness(pos, l);
+  float sss = pow(thin, 2.0) * (0.35 + 0.65 * back);
+
+  vec3 deep = vec3(0.012, 0.085, 0.030);
+  vec3 body = vec3(0.075, 0.430, 0.130);
+  vec3 glow = vec3(0.450, 0.950, 0.300);
+
+  vec3 col = mix(deep, body, dif) * occ;
+  col = col + body * amb * 0.22 * occ;
+  col = col + glow * sss * 0.45 * occ;
+  col = col + vec3(0.30, 0.80, 0.40) * fre * 0.38;
+  col = col + vec3(1.0, 1.0, 0.96) * (tight * 1.00 + broad * 0.10);
+  float fill = clamp(dot(n, normalize(vec3(-0.7, 0.1, 0.35))), 0.0, 1.0);
+  col = col + vec3(0.06, 0.16, 0.12) * fill * occ;
+
+  col = pow(clamp(col, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2));
+  fragColor = vec4(col, 1.0);
+}
+`;
+
+async function initWebGPU() {
   if (!navigator.gpu) {
-    throw new Error('this browser does not support WebGPU');
+    throw new Error('no WebGPU');
   }
   const adapter = await navigator.gpu.requestAdapter();
   if (!adapter) {
-    throw new Error('no WebGPU adapter available');
+    throw new Error('no WebGPU adapter');
   }
   const device = await adapter.requestDevice();
   const context = canvas.getContext('webgpu');
   const format = navigator.gpu.getPreferredCanvasFormat();
   context.configure({ device, format, alphaMode: 'premultiplied' });
 
-  const module = device.createShaderModule({ code: shader });
+  const module = device.createShaderModule({ code: WGSL });
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: { module, entryPoint: 'vs' },
     fragment: { module, entryPoint: 'fs', targets: [{ format }] },
     primitive: { topology: 'triangle-list' },
   });
-
   const uniforms = device.createBuffer({
     size: 16,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -186,15 +320,106 @@ async function start() {
     entries: [{ binding: 0, resource: { buffer: uniforms } }],
   });
 
-  let running = true;
-  device.lost.then(() => { running = false; });
+  let lost = false;
+  device.lost.then(() => { lost = true; });
+
+  return {
+    name: 'webgpu',
+    isLost: () => lost,
+    draw(time) {
+      device.queue.writeBuffer(uniforms, 0, new Float32Array([canvas.width, canvas.height, time, 0]));
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [{
+          view: context.getCurrentTexture().createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        }],
+      });
+      pass.setPipeline(pipeline);
+      pass.setBindGroup(0, bindGroup);
+      pass.draw(3);
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+    },
+  };
+}
+
+function initWebGL2() {
+  const gl = canvas.getContext('webgl2', {
+    alpha: true,
+    premultipliedAlpha: true,
+    antialias: false,
+    depth: false,
+    stencil: false,
+  });
+  if (!gl) {
+    throw new Error('no WebGL2');
+  }
+
+  const compile = (type, source) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, source);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      throw new Error('shader: ' + (gl.getShaderInfoLog(sh) || 'compile failed'));
+    }
+    return sh;
+  };
+
+  const program = gl.createProgram();
+  gl.attachShader(program, compile(gl.VERTEX_SHADER, GLSL_VERT));
+  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, GLSL_FRAG));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error('program: ' + (gl.getProgramInfoLog(program) || 'link failed'));
+  }
+
+  const vao = gl.createVertexArray();   // WebGL2 needs one bound even with no attributes
+  const uRes = gl.getUniformLocation(program, 'uRes');
+  const uTime = gl.getUniformLocation(program, 'uTime');
+
+  return {
+    name: 'webgl2',
+    isLost: () => gl.isContextLost(),
+    draw(time) {
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(program);
+      gl.bindVertexArray(vao);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, time);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    },
+  };
+}
+
+async function start() {
+  const reasons = [];
+  let renderer = null;
+  try {
+    renderer = await initWebGPU();
+  } catch (err) {
+    reasons.push(err.message);
+  }
+  if (!renderer) {
+    try {
+      renderer = initWebGL2();   // iOS 15+, and every current Android browser
+    } catch (err) {
+      reasons.push(err.message);
+    }
+  }
+  if (!renderer) {
+    throw new Error(reasons.join(', '));
+  }
 
   // Raymarching cost is per pixel, so the backing store gets a budget
   // rather than just devicePixelRatio: a phone at dpr 3 would otherwise
   // shade several times the pixels a desktop does.
   const PIXEL_BUDGET = 1000000;
   let quality = 1;
-
   let lastW = 0, lastH = 0, lastQuality = 0;
 
   function resize() {
@@ -234,7 +459,7 @@ async function start() {
   let warmup = 20;
 
   function frame(now) {
-    if (!running) { return; }
+    if (renderer.isLost()) { return; }
 
     // If the device can't hold a reasonable frame rate, shade fewer
     // pixels instead of letting the whole page judder.
@@ -242,10 +467,10 @@ async function start() {
     previous = now;
     if (warmup > 0) {
       warmup--;
-    } else if (dt > 26 && quality > 0.5) {
+    } else if (dt > 26 && quality > 0.45) {
       slowFrames++;
       if (slowFrames > 30) {
-        quality = Math.max(0.5, quality - 0.15);
+        quality = Math.max(0.45, quality - 0.15);
         slowFrames = 0;
         warmup = 20;
       }
@@ -254,23 +479,7 @@ async function start() {
     }
 
     resize();
-    const time = (now - start) / 1000;
-    device.queue.writeBuffer(uniforms, 0, new Float32Array([canvas.width, canvas.height, time, 0]));
-
-    const encoder = device.createCommandEncoder();
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [{
-        view: context.getCurrentTexture().createView(),
-        clearValue: { r: 0, g: 0, b: 0, a: 0 },
-        loadOp: 'clear',
-        storeOp: 'store',
-      }],
-    });
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.draw(3);
-    pass.end();
-    device.queue.submit([encoder.finish()]);
+    renderer.draw((now - start) / 1000);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -278,7 +487,7 @@ async function start() {
 
 start().catch((err) => {
   canvas.remove();
-  fallback.textContent = 'The green goo needs WebGPU: ' + err.message + '.';
+  fallback.textContent = 'The green goo needs WebGPU or WebGL2, which this browser did not provide (' + err.message + ').';
 });
 </script>
 </body>
