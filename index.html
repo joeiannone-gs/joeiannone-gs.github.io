@@ -8,7 +8,7 @@
 <body>
 <h1>Joseph Iannone's website</h1>
 
-<canvas id="goo" width="520" height="520" style="display:block;width:100%;max-width:520px"></canvas>
+<canvas id="goo" width="520" height="520" style="display:block;width:100%;max-width:520px;touch-action:none;cursor:grab"></canvas>
 <p id="goo-fallback"></p>
 
 <script type="module">
@@ -20,9 +20,13 @@ const fallback = document.getElementById('goo-fallback');
 // for the WebGL2 fallback; keep them in step when editing.
 const WGSL = `
 struct Uniforms {
-  res  : vec2f,
-  time : f32,
-  pad  : f32,
+  res   : vec2f,
+  time  : f32,
+  yaw   : f32,
+  pitch : f32,
+  pad0  : f32,
+  pad1  : f32,
+  pad2  : f32,
 };
 @group(0) @binding(0) var<uniform> u : Uniforms;
 
@@ -91,6 +95,20 @@ fn thickness(p : vec3f, l : vec3f) -> f32 {
   return clamp(s / 4.0, 0.0, 1.0);
 }
 
+// Dragging rotates the goo. Rather than rotating the field at every
+// sample, rays are moved into the goo's own space and shaded there:
+// dot products are rotation invariant, so only the sky term and the
+// floor shadow need world space.
+fn objectToWorld(yaw : f32, pitch : f32) -> mat3x3f {
+  let cy = cos(yaw);
+  let sy = sin(yaw);
+  let cp = cos(pitch);
+  let sp = sin(pitch);
+  let ry = mat3x3f(vec3f(cy, 0.0, -sy), vec3f(0.0, 1.0, 0.0), vec3f(sy, 0.0, cy));
+  let rx = mat3x3f(vec3f(1.0, 0.0, 0.0), vec3f(0.0, cp, sp), vec3f(0.0, -sp, cp));
+  return ry * rx;
+}
+
 @vertex
 fn vs(@builtin(vertex_index) vi : u32) -> @builtin(position) vec4f {
   var pts = array<vec2f, 3>(vec2f(-1.0, -1.0), vec2f(3.0, -1.0), vec2f(-1.0, 3.0));
@@ -109,7 +127,12 @@ fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
   let rd = normalize(fwd * 1.9 + right * uv.x + up * uv.y);
 
   let l = normalize(vec3f(0.55, 0.85, 0.45));
-  let t = march(ro, rd);
+  let R = objectToWorld(u.yaw, u.pitch);
+  let Rt = transpose(R);
+  let roo = Rt * ro;    // the same ray, seen from the goo's frame
+  let rdo = Rt * rd;
+  let lo = Rt * l;
+  let t = march(roo, rdo);
 
   if (t < 0.0) {
     // Soft contact shadow on an invisible floor, so the goo has weight.
@@ -124,20 +147,20 @@ fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
     return vec4f(0.0, 0.0, 0.0, 0.0);
   }
 
-  let pos = ro + rd * t;
+  let pos = roo + rdo * t;
   let n = normalAt(pos);
-  let v = -rd;
-  let hv = normalize(l + v);
+  let v = -rdo;
+  let hv = normalize(lo + v);
 
-  let dif = clamp(dot(n, l), 0.0, 1.0);
-  let amb = 0.5 + 0.5 * n.y;                       // sky above, dark floor below
+  let dif = clamp(dot(n, lo), 0.0, 1.0);
+  let amb = 0.5 + 0.5 * (R * n).y;                 // sky above, dark floor below
   let ndh = clamp(dot(n, hv), 0.0, 1.0);
   let tight = pow(ndh, 72.0);                      // wet pinpoint highlight
   let broad = pow(ndh, 10.0);                      // the sheen around it
   let fre = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 4.0);
   let occ = ao(pos, n);
-  let back = clamp(dot(v, -l), 0.0, 1.0);          // light pushing through toward the eye
-  let thin = 1.0 - thickness(pos, l);
+  let back = clamp(dot(v, -lo), 0.0, 1.0);         // light pushing through toward the eye
+  let thin = 1.0 - thickness(pos, lo);
   let sss = pow(thin, 2.0) * (0.35 + 0.65 * back);
 
   let deep = vec3f(0.012, 0.085, 0.030);
@@ -150,7 +173,7 @@ fn fs(@builtin(position) frag : vec4f) -> @location(0) vec4f {
   col = col + vec3f(0.30, 0.80, 0.40) * fre * 0.38;
   col = col + vec3f(1.0, 1.0, 0.96) * (tight * 1.00 + broad * 0.10);
   // Cool fill from the left so the shadow side still reads as a surface.
-  let fill = clamp(dot(n, normalize(vec3f(-0.7, 0.1, 0.35))), 0.0, 1.0);
+  let fill = clamp(dot(n, Rt * normalize(vec3f(-0.7, 0.1, 0.35))), 0.0, 1.0);
   col = col + vec3f(0.06, 0.16, 0.12) * fill * occ;
 
   col = pow(clamp(col, vec3f(0.0), vec3f(1.0)), vec3f(1.0 / 2.2));
@@ -169,6 +192,8 @@ const GLSL_FRAG = `#version 300 es
 precision highp float;
 uniform vec2 uRes;
 uniform float uTime;
+uniform float uYaw;
+uniform float uPitch;
 out vec4 fragColor;
 
 float smin(float a, float b, float k) {
@@ -231,6 +256,16 @@ float thickness(vec3 p, vec3 l) {
   return clamp(s / 4.0, 0.0, 1.0);
 }
 
+mat3 objectToWorld(float yaw, float pitch) {
+  float cy = cos(yaw);
+  float sy = sin(yaw);
+  float cp = cos(pitch);
+  float sp = sin(pitch);
+  mat3 ry = mat3(vec3(cy, 0.0, -sy), vec3(0.0, 1.0, 0.0), vec3(sy, 0.0, cy));
+  mat3 rx = mat3(vec3(1.0, 0.0, 0.0), vec3(0.0, cp, sp), vec3(0.0, -sp, cp));
+  return ry * rx;
+}
+
 void main() {
   vec2 q = (gl_FragCoord.xy * 2.0 - uRes) / min(uRes.x, uRes.y);
   vec2 uv = q;   // gl_FragCoord already points y up, unlike WebGPU
@@ -242,7 +277,12 @@ void main() {
   vec3 rd = normalize(fwd * 1.9 + right * uv.x + up * uv.y);
 
   vec3 l = normalize(vec3(0.55, 0.85, 0.45));
-  float tHit = march(ro, rd);
+  mat3 R = objectToWorld(uYaw, uPitch);
+  mat3 Rt = transpose(R);
+  vec3 roo = Rt * ro;
+  vec3 rdo = Rt * rd;
+  vec3 lo = Rt * l;
+  float tHit = march(roo, rdo);
 
   if (tHit < 0.0) {
     if (rd.y < 0.0) {
@@ -258,20 +298,20 @@ void main() {
     return;
   }
 
-  vec3 pos = ro + rd * tHit;
+  vec3 pos = roo + rdo * tHit;
   vec3 n = normalAt(pos);
-  vec3 v = -rd;
-  vec3 hv = normalize(l + v);
+  vec3 v = -rdo;
+  vec3 hv = normalize(lo + v);
 
-  float dif = clamp(dot(n, l), 0.0, 1.0);
-  float amb = 0.5 + 0.5 * n.y;
+  float dif = clamp(dot(n, lo), 0.0, 1.0);
+  float amb = 0.5 + 0.5 * (R * n).y;
   float ndh = clamp(dot(n, hv), 0.0, 1.0);
   float tight = pow(ndh, 72.0);
   float broad = pow(ndh, 10.0);
   float fre = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 4.0);
   float occ = ao(pos, n);
-  float back = clamp(dot(v, -l), 0.0, 1.0);
-  float thin = 1.0 - thickness(pos, l);
+  float back = clamp(dot(v, -lo), 0.0, 1.0);
+  float thin = 1.0 - thickness(pos, lo);
   float sss = pow(thin, 2.0) * (0.35 + 0.65 * back);
 
   vec3 deep = vec3(0.012, 0.085, 0.030);
@@ -283,7 +323,7 @@ void main() {
   col = col + glow * sss * 0.45 * occ;
   col = col + vec3(0.30, 0.80, 0.40) * fre * 0.38;
   col = col + vec3(1.0, 1.0, 0.96) * (tight * 1.00 + broad * 0.10);
-  float fill = clamp(dot(n, normalize(vec3(-0.7, 0.1, 0.35))), 0.0, 1.0);
+  float fill = clamp(dot(n, Rt * normalize(vec3(-0.7, 0.1, 0.35))), 0.0, 1.0);
   col = col + vec3(0.06, 0.16, 0.12) * fill * occ;
 
   col = pow(clamp(col, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2));
@@ -312,7 +352,7 @@ async function initWebGPU() {
     primitive: { topology: 'triangle-list' },
   });
   const uniforms = device.createBuffer({
-    size: 16,
+    size: 32,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   const bindGroup = device.createBindGroup({
@@ -326,8 +366,9 @@ async function initWebGPU() {
   return {
     name: 'webgpu',
     isLost: () => lost,
-    draw(time) {
-      device.queue.writeBuffer(uniforms, 0, new Float32Array([canvas.width, canvas.height, time, 0]));
+    draw(time, yaw, pitch) {
+      device.queue.writeBuffer(uniforms, 0,
+        new Float32Array([canvas.width, canvas.height, time, yaw, pitch, 0, 0, 0]));
       const encoder = device.createCommandEncoder();
       const pass = encoder.beginRenderPass({
         colorAttachments: [{
@@ -379,11 +420,13 @@ function initWebGL2() {
   const vao = gl.createVertexArray();   // WebGL2 needs one bound even with no attributes
   const uRes = gl.getUniformLocation(program, 'uRes');
   const uTime = gl.getUniformLocation(program, 'uTime');
+  const uYaw = gl.getUniformLocation(program, 'uYaw');
+  const uPitch = gl.getUniformLocation(program, 'uPitch');
 
   return {
     name: 'webgl2',
     isLost: () => gl.isContextLost(),
-    draw(time) {
+    draw(time, yaw, pitch) {
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -391,6 +434,8 @@ function initWebGL2() {
       gl.bindVertexArray(vao);
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, time);
+      gl.uniform1f(uYaw, yaw);
+      gl.uniform1f(uPitch, pitch);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },
   };
@@ -453,6 +498,63 @@ async function start() {
   window.addEventListener('orientationchange', resize);
   resize();
 
+  // Drag to rotate. Pointer events cover mouse, touch and pen alike;
+  // the canvas sets touch-action none so a vertical drag turns the goo
+  // rather than scrolling the page.
+  const RADIANS_PER_PIXEL = 0.008;
+  const PITCH_LIMIT = 1.2;
+  const GLIDE_DECAY = 0.85;
+  const GLIDE_TAKEUP = 0.4;   // a flick coasts a little, it does not fly off
+  const GLIDE_TIMEOUT = 80;   // ms: let go after holding still and it stays put
+  let yaw = 0, pitch = 0;
+  let spinYaw = 0, spinPitch = 0;
+  let velYaw = 0, velPitch = 0;
+  let dragging = false;
+  let lastX = 0, lastY = 0, lastMove = 0;
+
+  const clampPitch = (p) => Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, p));
+
+  canvas.addEventListener('pointerdown', (event) => {
+    dragging = true;
+    spinYaw = 0;
+    spinPitch = 0;
+    velYaw = 0;
+    velPitch = 0;
+    lastX = event.clientX;
+    lastY = event.clientY;
+    lastMove = event.timeStamp;
+    canvas.setPointerCapture(event.pointerId);
+    canvas.style.cursor = 'grabbing';
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (!dragging) { return; }
+    const dx = (event.clientX - lastX) * RADIANS_PER_PIXEL;
+    const dy = (event.clientY - lastY) * RADIANS_PER_PIXEL;
+    lastX = event.clientX;
+    lastY = event.clientY;
+    lastMove = event.timeStamp;
+    yaw = yaw + dx;
+    pitch = clampPitch(pitch + dy);
+    // Smooth the recent motion rather than trusting one jittery move.
+    velYaw = velYaw * 0.6 + dx * 0.4;
+    velPitch = velPitch * 0.6 + dy * 0.4;
+  });
+
+  const endDrag = (event) => {
+    if (!dragging) { return; }
+    dragging = false;
+    canvas.style.cursor = 'grab';
+    const flicked = event.timeStamp - lastMove < GLIDE_TIMEOUT;
+    spinYaw = flicked ? velYaw * GLIDE_TAKEUP : 0;
+    spinPitch = flicked ? velPitch * GLIDE_TAKEUP : 0;
+    if (canvas.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
   const start = performance.now();
   let previous = start;
   let slowFrames = 0;
@@ -478,8 +580,16 @@ async function start() {
       slowFrames = 0;
     }
 
+    if (!dragging) {
+      // Let a flick coast to a stop instead of stopping dead.
+      yaw = yaw + spinYaw;
+      pitch = clampPitch(pitch + spinPitch);
+      spinYaw = Math.abs(spinYaw) < 1e-4 ? 0 : spinYaw * GLIDE_DECAY;
+      spinPitch = Math.abs(spinPitch) < 1e-4 ? 0 : spinPitch * GLIDE_DECAY;
+    }
+
     resize();
-    renderer.draw((now - start) / 1000);
+    renderer.draw((now - start) / 1000, yaw, pitch);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
