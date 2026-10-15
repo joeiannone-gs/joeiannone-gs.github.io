@@ -255,7 +255,7 @@ h3.u + p { margin-top: 0; }
 
 <figure>
 <img class="fig-img" src="figs/ladder.png" alt="A ladder of quotes in the order book, and the rung that gets canceled" loading="lazy">
-<figcaption>A ladder: one 5-share order at each of several prices, 2 or more ticks from the touch. When the market falls 2 ticks, the rung that is now the best bid is canceled; the rest keep their places at the front of their queues.</figcaption>
+<figcaption>A ladder: one 5-share order at each of several prices, 2 or more ticks from the touch. When the market falls 2 ticks, the rung that is now the best bid is canceled; the rest keep their places near the front of their queues.</figcaption>
 </figure>
 
 <h3 class="u">Loop speed?</h3>
@@ -263,7 +263,7 @@ h3.u + p { margin-top: 0; }
 
 <figure>
 <img class="fig-img" src="figs/loop_speed.png" alt="Backtest return against loop period" loading="lazy">
-<figcaption>Backtest return against the decision-loop period, by data split. Left: an earlier strategy quoting one tick behind the touch, from 5 to 30 ms. Right: the final strategy at 5, 7 and 10 ms, where the differences were within noise (paired against 10 ms: t = +0.67 at 5 ms, +1.16 at 7 ms) while 5 ms sent about 17% more orders.</figcaption>
+<figcaption>Backtest return against the decision-loop period, from 5 to 30 ms, for an earlier strategy quoting one tick behind the touch (training split, 3,103 sessions).</figcaption>
 </figure>
 
 <script>
