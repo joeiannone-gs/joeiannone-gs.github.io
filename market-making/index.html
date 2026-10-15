@@ -4,215 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Building a Market-Making Bot</title>
-<meta name="description" content="The journey of building a market-making bot for Polymarket prediction markets.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <style>
-:root {
-  color-scheme: light;
-  --page: #fcfcfb;
-  --surface: #fcfcfb;
-  --raised: #f4f3ef;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --muted: #898781;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.10);
-  --link: #1c5cab;
-  --s1: #2a78d6;
-  --s2: #eb6834;
-  --s3: #1baf7a;
-  --s4: #eda100;
-  --s7: #6250d6;
-  --wash1: rgba(42, 120, 214, 0.10);
-  --wash2: rgba(235, 104, 52, 0.10);
-  --good: #0ca30c;
-  --critical: #d03b3b;
-  --node: #f0efec;
-  --leaf-bid: rgba(42, 120, 214, 0.14);
-  --leaf-ask: rgba(235, 104, 52, 0.14);
-  --leaf-both: rgba(27, 175, 122, 0.16);
-  --leaf-flat: rgba(137, 135, 129, 0.16);
-  --div-b2: #1c5cab; --div-b1: #86b6ef; --div-0: #d6d5cf; --div-r1: #f0a09e; --div-r2: #c9302f; --div-na: #f0efec;
-}
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --page: #121211;
-    --surface: #1a1a19;
-    --raised: #222220;
-    --ink: #f0efec;
-    --ink-2: #c3c2b7;
-    --muted: #898781;
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --link: #86b6ef;
-    --s1: #3987e5;
-    --s2: #d95926;
-    --s3: #199e70;
-    --s4: #c98500;
-    --s7: #9085e9;
-    --wash1: rgba(57, 135, 229, 0.14);
-    --wash2: rgba(217, 89, 38, 0.14);
-    --node: #2c2c2a;
-    --leaf-bid: rgba(57, 135, 229, 0.22);
-    --leaf-ask: rgba(217, 89, 38, 0.22);
-    --leaf-both: rgba(25, 158, 112, 0.24);
-    --leaf-flat: rgba(137, 135, 129, 0.22);
-    --div-b2: #6da7ec; --div-b1: #24568f; --div-0: #45443f; --div-r1: #8a3434; --div-r2: #e66767; --div-na: #2c2c2a;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #121211; --surface: #1a1a19; --raised: #222220; --ink: #f0efec; --ink-2: #c3c2b7;
-  --muted: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255, 255, 255, 0.10);
-  --link: #86b6ef; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s7: #9085e9;
-  --wash1: rgba(57, 135, 229, 0.14); --wash2: rgba(217, 89, 38, 0.14); --node: #2c2c2a;
-  --leaf-bid: rgba(57, 135, 229, 0.22); --leaf-ask: rgba(217, 89, 38, 0.22);
-  --leaf-both: rgba(25, 158, 112, 0.24); --leaf-flat: rgba(137, 135, 129, 0.22);
-  --div-b2: #6da7ec; --div-b1: #24568f; --div-0: #45443f; --div-r1: #8a3434; --div-r2: #e66767; --div-na: #2c2c2a;
-}
-
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0;
-  background: var(--page);
-  color: var(--ink);
-  font: 18px/1.65 Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
-}
-main { max-width: 680px; margin: 0 auto; padding: 32px 16px 96px; }
-.home { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; margin-bottom: 40px; }
-.home a { color: var(--ink-2); text-decoration: none; }
-.home a:hover { color: var(--ink); text-decoration: underline; }
-a { color: var(--link); }
-h2 {
-  font: 600 1.18rem/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
-  margin: 2.6em 0 0.6em;
-  scroll-margin-top: 16px;
-}
-p { margin: 0 0 1em; }
-p.indent { text-indent: 2em; }
-p.shout { font-size: 1.35rem; font-weight: 600; margin-top: 2em; letter-spacing: 0.01em; overflow-wrap: anywhere; }
-.outline {
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-  background: var(--raised);
-  border-radius: 8px;
-  padding: 14px 18px 10px;
-  color: var(--ink-2);
-}
-.outline p { margin: 0 0 4px; color: var(--ink); font-weight: 600; }
-.outline ul { margin: 0; padding-left: 1.2em; list-style: "–  "; }
-.outline ul ul { margin: 2px 0 4px; }
-.outline li { margin: 1px 0; }
+body { margin: 0 auto; max-width: 720px; padding: 16px; background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5; }
+h2, h3 { font-size: 1em; font-weight: bold; margin: 2em 0 0.5em; }
+.outline p { margin: 0; }
+.outline ul { margin: 0; }
 .outline a { color: inherit; text-decoration: none; }
-.outline a:hover { color: var(--ink); text-decoration: underline; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-pre.tree-string {
-  font-size: 13px; line-height: 1.55;
-  background: var(--raised); border-radius: 8px; padding: 14px 16px;
-  white-space: pre-wrap; overflow-wrap: anywhere; margin: 0.4em 0 1.2em;
-}
-pre.code {
-  font-size: 13px; line-height: 1.5;
-  background: var(--raised); border-radius: 8px; padding: 14px 16px;
-  overflow-x: auto; margin: 0.4em 0 1.2em;
-}
-
-/* Figures may run wider than the text column on large screens. */
-figure { margin: 2em 0 2.2em; }
-figure.wide { margin-left: calc(50% - min(48vw, 440px)); margin-right: calc(50% - min(48vw, 440px)); }
-figcaption {
-  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: var(--ink-2);
-  margin-top: 10px;
-}
-figcaption b { color: var(--ink); font-weight: 600; }
-.fig-img { display: block; max-width: 100%; height: auto; margin: 0 auto 8px; background: #fff; }
-.todo-box { border: 2px dashed var(--critical); color: var(--critical); padding: 24px; font: 14px system-ui, sans-serif; }
-
-/* Charts */
-.chart { position: relative; font: 12px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink-2); }
-.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-.chart .title { font: 600 14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); margin: 0 0 2px; }
-.chart .sub { font-size: 13px; color: var(--ink-2); margin: 0 0 8px; }
-.chart .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 6px; font-size: 13px; color: var(--ink-2); }
-.chart .legend span { display: inline-flex; align-items: center; gap: 6px; }
-.chart .legend i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
-.chart .legend i.box { width: 10px; height: 10px; border-radius: 2px; }
-.chart .tick text, .chart text.tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.chart .axis-label { fill: var(--muted); font-size: 11px; }
-.chart .grid line { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
-.chart .baseline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
-.chart .endlabel { fill: var(--ink-2); font-size: 12px; }
-.chart .note { fill: var(--muted); font-size: 11px; }
-.chart .hair { stroke: var(--muted); stroke-width: 1; }
-.chart .tip {
-  position: absolute; pointer-events: none; z-index: 2;
-  background: var(--surface); color: var(--ink);
-  border: 1px solid var(--border); border-radius: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-  padding: 7px 9px; font-size: 12px; line-height: 1.45; white-space: nowrap;
-  opacity: 0; transition: opacity 80ms;
-}
-.chart .tip .h { color: var(--ink-2); margin-bottom: 2px; }
-.chart .tip .r { display: flex; align-items: center; gap: 7px; }
-.chart .tip .r i { width: 12px; height: 2px; border-radius: 1px; display: inline-block; }
-.chart .tip .r b { font-weight: 600; font-variant-numeric: tabular-nums; }
-.chart .tip .r span { color: var(--ink-2); }
-.chart rect.bar:hover, .chart rect.bar:focus { opacity: 0.8; outline: none; }
-details.data { font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink-2); margin-top: 6px; }
-details.data summary { cursor: pointer; color: var(--muted); width: max-content; }
-details.data .wrap { max-height: 280px; overflow: auto; margin-top: 6px; border: 1px solid var(--border); border-radius: 6px; }
-details.data table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-details.data th, details.data td { text-align: right; padding: 3px 10px; border-bottom: 1px solid var(--grid); }
-details.data th:first-child, details.data td:first-child { text-align: left; }
-details.data th { position: sticky; top: 0; background: var(--raised); color: var(--ink); font-weight: 600; }
-.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px 28px; }
-
-/* Diagrams and trees */
-svg.diagram { display: block; width: 100%; height: auto; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
-svg.diagram .ink { fill: var(--ink); }
-svg.diagram .ink2 { fill: var(--ink-2); }
-svg.diagram .muted { fill: var(--muted); }
-svg.diagram .edge { stroke: var(--axis); stroke-width: 1.5; fill: none; }
-svg.diagram .edge-t { stroke: var(--s3); stroke-width: 1.5; fill: none; }
-svg.diagram .edge-f { stroke: var(--muted); stroke-width: 1.5; fill: none; }
-svg.diagram .node { fill: var(--node); }
-svg.diagram .box { fill: var(--surface); stroke: var(--axis); stroke-width: 1; }
-svg.diagram .leaf-BID { fill: var(--leaf-bid); }
-svg.diagram .leaf-ASK { fill: var(--leaf-ask); }
-svg.diagram .leaf-BOTH { fill: var(--leaf-both); }
-svg.diagram .leaf-FLAT, svg.diagram .leaf-WAIT { fill: var(--leaf-flat); }
-svg.diagram .s1 { stroke: var(--s1); } svg.diagram .s2 { stroke: var(--s2); } svg.diagram .s3 { stroke: var(--s3); }
-svg.diagram .f1 { fill: var(--s1); } svg.diagram .f2 { fill: var(--s2); } svg.diagram .f3 { fill: var(--s3); }
-.tree-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.trees { display: grid; grid-template-columns: 1fr; gap: 28px; justify-items: center; }
-.trees > div { width: 100%; max-width: 640px; min-width: 0; }
-.panels > * { min-width: 0; }
-.trees .t-head { font: 600 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); margin-bottom: 4px; }
-.trees .t-sub { font: 12px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink-2); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
-.eq { overflow-x: auto; overflow-y: hidden; margin: 0.6em 0; }
-.eq-block { background: var(--raised); border-radius: 8px; padding: 14px 18px 8px; margin: 1em 0 1.6em; }
-.eq-block p, .eq-block li { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink-2); }
-.eq-block ul { padding-left: 1.1em; margin: 0 0 0.8em; }
-.experiments { margin: 1.2em 0; }
-.experiments ul { padding-left: 1.2em; }
-.experiments li { margin: 0 0 0.55em; }
-.experiments h3 { font: 600 1rem/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 1.8em 0 0.4em; }
-footer { margin-top: 64px; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--muted); }
-@media (max-width: 560px) {
-  body { font-size: 17px; }
-  figure.wide { margin-left: 0; margin-right: 0; }
-}
+p.indent { text-indent: 2em; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+figure { margin: 1.5em 0; }
+figure img { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em; }
+.eq { overflow-x: auto; overflow-y: hidden; }
 </style>
 </head>
 <body>
-<main>
-<nav class="home"><a href="/">← Joseph Iannone</a></nav>
-<article>
+<nav class="home"><a href="/">Joseph Iannone</a></nav>
 <nav class="outline" aria-label="Contents"><p>History:</p><ul>
 <li><a href="#market-making-theory">Market-Making Theory; AV, GLFT</a></li>
 <li><a href="#the-life-of-an-order">The life of an order</a></li>
@@ -275,6 +83,13 @@ footer { margin-top: 64px; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", 
 
 <p>Following the literature for market-making strategies for discrete markets, quickly brings us to an area of mathematics called Stochastic Optimal Control. This tries to answer how to make optimal decisions under unpredictable conditions. Basically, this will output an action based on a handful of inputs (external factors like order intensities and spread, and internal factors like current position). The external factors are modeled as a markov process, where one combination of market states has a given probability of jumping to another combination of market states. Given these probabilities, and the current position, the <em>potential future value</em> of each decision can be calculated through a process called backward induction. In this case, a decision is which orders should be placed (buy or sell) and how many ticks away from the mid price they should be placed. If there’s a low rate of buy market orders coming into the clob, and the position is very positive, the best decision would most likely be to place a sell order very close to the mid, as there is much urgency to offload inventory in order to keep the bot delta neutral.</p>
 
+<figure>
+<img class="fig-img" src="figs/soc_policy.png" alt="Stochastic optimal control policy" loading="lazy">
+<img class="fig-img" src="figs/soc_policy_drift.png" alt="Stochastic optimal control policy" loading="lazy">
+<figcaption>Optimal policy from backward induction at the start of the session, by inventory and alpha state (0 is the most bearish of the seven states, 6 the most bullish). Top: the policy notebook's model. Bottom: the version with the alpha drift term (inventory penalty 0.05, chosen for illustration because the tuned value was not saved).</figcaption>
+</figure>
+
+
 <h2 id="incorporating-alpha">Incorporating Alpha </h2>
 
 <p>Exclusiving trying to capture the spread without any type of directional signal will never be profitable in a prediction market because you will always get filled by market participants who are working off of more information than you. This information could be related to the fair value of the asset for example. Maybe they have a fiber optic cable that pumps information about the Binance bitcoin market in Tokyo to a cloud server in Amsterdam (doing this they’ll be able to get information 60ms stale compared to 120ms stale using normal internet infrastructure). They’ll be able to calculate the exact fair value and update their quotes 8ms later, or they might have co-location with polymarkets clob (which is allowed now through their know-your-customer policy) allowing them to react to the state of the market in under a couple milliseconds. So to have the best chance here, we can assume that the clob is updated as quickly as information becomes available, this means that it will be best if we don’t even look at any external sources of information. For example if we worked off of the binance data only, we would be 60ms behind the fastest market makers (since they are reacting to their information in 60ms compared to our 120ms). If we worked off of the clob exclusively we can react within 16ms (8ms to our server and 8ms to the clob, plus any lag internal to polymarket’s own infrastructure). So, we need to create a model that takes in features of the market and predicts where it will go soon after.</p>
@@ -282,8 +97,9 @@ footer { margin-top: 64px; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", 
 <p class="indent">It took a lot of trial and error to get the most useful model possible. As the model coincides with the execution logic and there is a lot of feature engineering. But here we can just start with a simple model that estimates the change in price in one second. There are hundreds of features that could be potentially useful for the model. I started with features explored in <strong>this paper. </strong>From the shap plots, we can see that overwhelmingly, the most important features are variations of order-flow-imbalance. We also want to choose our loss function carefully, as there are different consequences to different types of wrong predictions. For example, if the model thinks the market will go up, but it actually goes down, it should be punished much more than if the market ends up staying flat as losses could be much greater. So instead of using OLS we could use GMADL (Generalized Mean Absolute Directional Loss), which punishes the model more harshly depending on direction and magnitude of the prediction.</p>
 
 <figure>
-<img class="fig-img" src="figs/shap.png" alt="SHAP summary plot" loading="lazy">
-<figcaption>SHAP summary for one of the production direction models (best bid, 5-minute markets, 30-150 ms ahead), trained after the trade-data fix and scored on 11,000 holdout rows it never saw.</figcaption>
+<img class="fig-img" src="figs/shap.png" alt="SHAP summary and dependence plots" loading="lazy">
+<img class="fig-img" src="figs/shap_matrix.png" alt="SHAP summary and dependence plots" loading="lazy">
+<figcaption>SHAP summary for one of the production direction models (best bid, 5-minute markets, 30-150 ms ahead), trained after the trade-data fix and scored on 11,000 holdout rows it never saw. Below: SHAP value against feature value for the top 15 features.</figcaption>
 </figure>
 
 
@@ -397,7 +213,7 @@ footer { margin-top: 64px; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", 
 
 <figure>
 <img class="fig-img" src="figs/live_run.png" alt="Live equity curve" loading="lazy">
-<figcaption>Third live test, 244 five-minute windows (UTC). The gap is a rate-limit halt and restart. The 200 windows compared against the backtest made $60.99.</figcaption>
+<figcaption>Third live test: 200 five-minute windows from Sep 6 01:25 to Sep 7 00:25 UTC (the gap is a rate-limit halt and restart). Wallet PnL was $60.99; maker rebates, paid out the next day, add about $4.6 (as modelled by the bot), for about $66 in total.</figcaption>
 </figure>
 
 
@@ -430,8 +246,6 @@ footer { margin-top: 64px; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", 
 </ul>
 </div>
 
-</article>
-</main>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   if (window.katex) {
