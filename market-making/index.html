@@ -17,6 +17,11 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
 figure { margin: 1.5em 0; }
 figure img { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em; }
 .eq { overflow-x: auto; overflow-y: hidden; }
+ol.facts { list-style: none; counter-reset: fact; padding-left: 2.2em; }
+ol.facts li { counter-increment: fact; text-indent: -1.4em; }
+ol.facts li::before { content: counter(fact) ")"; display: inline-block; width: 1.4em; text-indent: 0; }
+h3.u { font-weight: normal; text-decoration: underline; margin: 1.5em 0 0; }
+h3.u + p { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -63,13 +68,26 @@ figure img { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em
 
 <h2 id="continuous-vs-discrete-markets">Continuous vs Discrete Markets </h2>
 
-<p>The equations we talked about earlier work under the assumption that the markets they trade are continuous. This means that the minimum price change possible (this is called the tick-size), is small relative to the price of the contract. Truly continuous markets don’t exist. A market that could be effectively modeled as continuous is the Bitcoin market on Binance. The price of Bitcoin is large ($70,000) and the tick size is small ($0.01). On polymarket and other prediction markets, tick sizes are large. Prices exist in a 0.00 to 1.00 range, while their tick sizes are typically $0.01 to $0.001. Using a continuously-modeled equation like AS or GLFT, will fail on these markets.</p>
-
-<p>Once I realized this I completely stopped any further testing and started researching market making for discrete markets.</p>
+<p>The equations we talked about earlier work under the assumption that the markets they trade are continuous. This means that the minimum price change possible (this is called the tick-size), is small relative to the price of the contract. Truly continuous markets don’t exist. A market that could be effectively modeled as continuous is the Bitcoin market on Binance. The price of Bitcoin is large ($70,000) and the tick size is small ($0.01). On polymarket and other prediction markets, tick sizes are large. Prices exist in a 0.00 to 1.00 range, while their tick sizes are typically $0.01 to $0.001. Using a continuously-modeled equation like AS or GLFT, will fail on these markets. Once I realized this I completely stopped any further testing and started researching market making for discrete markets.</p>
 
 <figure>
 <img class="fig-img" src="figs/discrete.png" alt="Polymarket best bid and ask, and histogram of tick changes" loading="lazy">
 <figcaption>Left: the best bid and ask of one 15-minute BTC up/down market. Right: how far the best bid moves each time it changes. Here the $0.01 tick was a median 3.6% of the contract price, vs. about 0.0016 bp of the price for BTC on Binance.</figcaption>
+</figure>
+
+<p>Before we go any deeper, we need to have you (yes, you) develop an accurate mental model of how the actual exchange works to have any hope of creating working strategies. So here are some facts:</p>
+<ol class="facts">
+<li>When an order is sent to the exchange it lands on this thing called a central limit order book (CLOB), this is where buyers (bid orders) and sellers (ask orders) are matched.</li>
+<li>Orders of the same price are placed at the back of that price’s queue</li>
+<li>Orders at the front of the queue get matched first</li>
+<li>If there’s an order waiting at the front of the queue and the opposite order comes in at that order’s price, a match is made, and that trade begins its journey to be confirmed on the polygon blockchain.</li>
+<li>If an order is matched, it is removed from the queue</li>
+<li>If an order is canceled, it is removed from the queue</li>
+</ol>
+
+<figure>
+<img class="fig-img" src="figs/book.png" alt="A central limit order book: a queue of orders at each price" loading="lazy">
+<figcaption>A central limit order book. Each price has its own queue of orders (sizes in shares), and orders are matched from the front of the queue.</figcaption>
 </figure>
 
 
@@ -84,9 +102,8 @@ figure img { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em
 <p>Following the literature for market-making strategies for discrete markets, quickly brings us to an area of mathematics called Stochastic Optimal Control. This tries to answer how to make optimal decisions under unpredictable conditions. Basically, this will output an action based on a handful of inputs (external factors like order intensities and spread, and internal factors like current position). The external factors are modeled as a markov process, where one combination of market states has a given probability of jumping to another combination of market states. Given these probabilities, and the current position, the <em>potential future value</em> of each decision can be calculated through a process called backward induction. In this case, a decision is which orders should be placed (buy or sell) and how many ticks away from the mid price they should be placed. If there’s a low rate of buy market orders coming into the clob, and the position is very positive, the best decision would most likely be to place a sell order very close to the mid, as there is much urgency to offload inventory in order to keep the bot delta neutral.</p>
 
 <figure>
-<img class="fig-img" src="figs/soc_policy.png" alt="Stochastic optimal control policy" loading="lazy">
 <img class="fig-img" src="figs/soc_policy_drift.png" alt="Stochastic optimal control policy" loading="lazy">
-<figcaption>Optimal policy from backward induction at the start of the session, by inventory and alpha state (0 is the most bearish of the seven states, 6 the most bullish). Top: the policy notebook's model. Bottom: the version with the alpha drift term (inventory penalty 0.05, chosen for illustration because the tuned value was not saved).</figcaption>
+<figcaption>Optimal policy from backward induction at the start of the session, by inventory and alpha state (0 is the most bearish of the seven states, 6 the most bullish), with the alpha drift term (inventory penalty 0.05, chosen for illustration because the tuned value was not saved).</figcaption>
 </figure>
 
 
@@ -123,7 +140,7 @@ figure img { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em
 
 <figure>
 <img class="fig-img" src="figs/rl_curve.png" alt="PPO trades per episode falling toward zero" loading="lazy">
-<figcaption>Trades per episode during PPO training (stable-baselines3 logs). Steps 344k to 1.19M were trained but not logged.</figcaption>
+<figcaption>Trades per episode during PPO training (stable-baselines3 logs). Steps 344k to 1.19M were trained but not logged, so they are cut out of the x-axis.</figcaption>
 </figure>
 
 
@@ -213,7 +230,7 @@ figure img { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em
 
 <figure>
 <img class="fig-img" src="figs/live_run.png" alt="Live equity curve" loading="lazy">
-<figcaption>Third live test: 200 five-minute windows from Sep 6 01:25 to Sep 7 00:25 UTC (the gap is a rate-limit halt and restart). Wallet PnL was $60.99; maker rebates, paid out the next day, add about $4.6 (as modelled by the bot), for about $66 in total.</figcaption>
+<figcaption>Third live test: 200 five-minute windows from Sep 6 01:25 to Sep 7 00:25 UTC, plotted by time spent trading (a rate-limit halt and restart is left out). Wallet PnL was $60.99; maker rebates, paid out the next day, add about $4.6 (as modelled by the bot), for about $66 in total.</figcaption>
 </figure>
 
 
@@ -226,25 +243,28 @@ figure img { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em
 <h2 id="more-strategies">More Strategies </h2>
 
 <p>Now we have a highly-accurate backtest, proven by days of live-trading. We can start asking and testing any questions, and get a probable answer: what happens if we trade multiple assets at the same time? Maybe we could trade two highly correlated markets (like the btc-updown 15m and 5m), and could this smooth out PnL? What happens if we trade low-activity markets, how does that compare with the high-activity one (btc-updown 5m) in terms of profitability and sharpe?</p>
-<div class="experiments">
-<h3>Trade several markets at once?</h3><p>The frozen best strategy was run on BTC and ETH, 5- and 15-minute markets, each with its own models. Together they made about $1,020 over Aug 13 – Sep 13, but the combined Sharpe was about the same as BTC 5m alone on two of three splits: diversification without extra edge.</p>
-<h3>Two correlated markets (BTC 15m + 5m)?</h3><p>On an earlier version of the simulator, trading both books together was exactly the sum of trading each: about 19% more profit, at the same Sharpe. It did not smooth PnL — the 15-minute book added losing sessions (8 → 13 of 96 on validation). No signal combining the two books helped, and a later test of cancelling quotes when a sibling market moved against them did no better than a placebo.</p>
-<h3>Low- vs high-activity markets?</h3><p>Profit and Sharpe stability ranked with activity. BTC 5m (about 420 trades a minute) was the only market with a consistently positive Sharpe; ETH 15m, roughly fifteen times quieter, lost money.</p>
-<figure><img class="fig-img" src="figs/multi_market.png" alt="PnL and activity by market" loading="lazy"><figcaption>The same strategy on four markets: backtest PnL and trades per minute.</figcaption></figure>
-<h3>Other experiments</h3><ul>
-<li><b>Ladders.</b> One order per side beat every deeper ladder (all seven lost to one rung on validation).</li>
-<li><b>When to stop quoting.</b> Quote right up to the bell: 43% of fills, and most of the profit, came in the last minute; stopping 30 s or more early cost money.</li>
-<li><b>What the simulator fixes were worth.</b> Re-scoring one strategy on a fixed sample under each cumulative backtester patch took its return from +$1,851 to +$27.52; the patch for the book revealing a fill before the trade event alone flipped the sign.</li>
-<li><b>Threshold tuning.</b> Tuning the two entry thresholds improved training and made validation worse in 19 of 19 settings.</li>
-<li><b>Order size.</b> Bigger clips did not make more money: edge per share fell, and 40-share orders were the worst.</li>
-<li><b>Skipping bad sessions.</b> A model over 381 pre-session features could not tell profitable 5-minute windows from unprofitable ones beyond chance.</li>
-<li><b>Liquidity rewards.</b> Farming Polymarket&#x27;s liquidity rewards adds income, but only reaches a positive Sharpe at implausibly high reward rates.</li>
-<li><b>Binance as a signal.</b> Quoting off Binance turned fills from adverse to favourable, but the remaining edge was smaller than the spread, and ~120 ms of feed lag finished it off.</li>
-<li><b>Taking liquidity.</b> Every taker strategy lost after fees.</li>
-<li><b>Flattening before the bell.</b> Reducing inventory before settlement lowered returns for every strategy tried.</li>
-<li><b>Loop speed.</b> Running the decision loop at 5 ms instead of 10 ms changed nothing but the number of orders sent.</li>
-</ul>
-</div>
+
+<h3 class="u">Trade several markets at once?</h3>
+<p>My expectation here was that multiple markets would ultimately lead to a higher sharpe as the profit curve would be the cumulative average over multiple uncorrelated curves. However, the differences in sharpe between just trading the BTC 5m and trading it plus the 15m BTC, 5m ETH, and 15m ETH, were miniscule. This was because the BTC 5m has a magnitude more volume traded on it then the next market so its equity curve would eclipse that of any other market.</p>
+
+<h3 class="u">Two correlated markets?</h3>
+<p>I tried to create a strategy that would take into account the correlation between the 5m and the 15m BTC markets. For example, if the bot held a positive 5m position that would reduce the propensity for the bot to take out a positive position in either the 5m or 15m position and allow for one market to hedge the other. But multiple problems became apparent. Firstly, both markets operate on completely different time-scales. The 5m market gets about 10x more trades per minute than the 15m, so if we traded the 5m primarily and used the 15m to hedge, the orders intended to hedge 5m inventory would fill too sparsely and inconsistently to be viable. If we traded the 15m primarily and used the 5m to hedge, the volume of the 15m would not be enough to be profitable in the first place.</p>
+
+<h3 class="u">Ladders?</h3>
+<p>The idea here is to place orders far from the touch (2 ticks out or more) in order to get a better queue position over time and only cancel orders when they get to the adverse-selection danger zone (e.g. near the best bid price when the market is going down). So instead of placing orders where you want them, you cancel orders where you don’t. The main problem here is instead of managing just one order you now have to manage however many you set, maybe 5 or 10 on each side of the book. Polymarket rate limits using a bucket system. Market makers get 40 points per second for order placement and 60 points for order cancels. On average the most successful strategy sends an update every 500ms, so there’s enough allotment for the ladder still. However when tested, the one order still beats multiple orders.</p>
+
+<figure>
+<img class="fig-img" src="figs/ladder.png" alt="A ladder of quotes in the order book, and the rung that gets canceled" loading="lazy">
+<figcaption>A ladder: one 5-share order at each of several prices, 2 or more ticks from the touch. When the market falls 2 ticks, the rung that is now the best bid is canceled; the rest keep their places at the front of their queues.</figcaption>
+</figure>
+
+<h3 class="u">Loop speed?</h3>
+<p>At a certain point in the bot’s development, I realized that two things were important: 1) processing information the instant it becomes available and 2) acting on that information as quickly as possible. Processing the information involves absorbing websocket events from the exchange as they get sent and storing them localling. Determining whether or not an update needs to be sent (the action) involves running the catboost models with that new data, and running the strategy logic, this happens on a loop. One would assume that a faster loop would be more profitable, as this is generally correct, but to what extent?</p>
+
+<figure>
+<img class="fig-img" src="figs/loop_speed.png" alt="Backtest return against loop period" loading="lazy">
+<figcaption>Backtest return against the decision-loop period, by data split. Left: an earlier strategy quoting one tick behind the touch, from 5 to 30 ms. Right: the final strategy at 5, 7 and 10 ms, where the differences were within noise (paired against 10 ms: t = +0.67 at 5 ms, +1.16 at 7 ms) while 5 ms sent about 17% more orders.</figcaption>
+</figure>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
