@@ -1,0 +1,13 @@
+/* Site directory: a fixed column on the left on wide screens, a row of links on top on narrow ones. */
+nav.dir { font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.6; }
+nav.dir ul { list-style: none; margin: 0; padding: 0; }
+nav.dir a { color: #000; text-decoration: none; }
+nav.dir a:hover { text-decoration: underline; }
+nav.dir a[aria-current="page"] { font-weight: bold; }
+@media (min-width: 1100px) {
+  nav.dir { position: fixed; top: 16px; left: 24px; width: 150px; }
+}
+@media (max-width: 1099px) {
+  nav.dir { margin-bottom: 1.5em; }
+  nav.dir li { display: inline; margin-right: 1.2em; }
+}
