@@ -12,11 +12,15 @@ figure img, figure video { display: block; max-width: 100%; height: auto; margin
 figcaption { font-size: 14px; }
 .showcase { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em 16px; margin: 1.5em 0; }
 .showcase figure { margin: 0; }
+.showcase > figure.lead { grid-column: 1 / -1; }
+.lead-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lead figcaption { text-align: center; }
+@media (max-width: 540px) { .lead-pair { grid-template-columns: 1fr; gap: 1.2em; } }
 .showcase img, .showcase video { width: 100%; aspect-ratio: 16 / 9; object-fit: contain; }
-.showcase > figure:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: calc(50% - 8px); }
+.showcase > figure.solo { grid-column: 1 / -1; justify-self: center; width: calc(50% - 8px); }
 @media (max-width: 540px) {
   .showcase { grid-template-columns: 1fr; }
-  .showcase > figure:last-child:nth-child(odd) { width: auto; justify-self: stretch; }
+  .showcase > figure.solo { width: auto; justify-self: stretch; }
 }
 .slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: thin; background: #2b2b2b; }
 .slides img { flex: 0 0 100%; width: 100%; aspect-ratio: 16 / 9; margin: 0; scroll-snap-align: start; }
@@ -48,13 +52,12 @@ h3.u + p { margin-top: 0; }
 <h2 id="showcase">Showcase</h2>
 
 <div class="showcase">
-<figure>
-<img src="media/hero.jpg" alt="The GraphSpace workspace with a transformer model and the commit tree" loading="lazy">
-<figcaption>GraphSpace: a visual development environment for AI/ML.</figcaption>
-</figure>
-<figure>
-<video src="media/build.mp4" poster="media/build.jpg" autoplay muted loop playsinline preload="none" aria-label="Building a model visually"></video>
-<figcaption><b>Frictionless building.</b> GraphSpace enables you to build real, working ML/AI models visually.</figcaption>
+<figure class="lead">
+<div class="lead-pair">
+<img src="media/mlp_diagram.svg" alt="Diagram of a multi-layer perceptron: three inputs, two hidden layers of five neurons, and two outputs, every neuron connected to each one in the next layer" width="1600" height="900">
+<video src="media/build.mp4" poster="media/build.jpg" autoplay muted loop playsinline preload="none" aria-label="Building a multi-layer perceptron in GraphSpace"></video>
+</div>
+<figcaption>GraphSpace makes it possible to build real, working AI/ML models visually. This is an example of a simple neural network being built within the platform.</figcaption>
 </figure>
 <figure>
 <video src="media/mlp.mp4" poster="media/mlp.jpg" autoplay muted loop playsinline preload="none" aria-label="A multi-layer perceptron in GraphSpace"></video>
@@ -80,7 +83,7 @@ h3.u + p { margin-top: 0; }
 <video src="media/vcs.mp4" poster="media/vcs.jpg" autoplay muted loop playsinline preload="none" aria-label="Committing and branching"></video>
 <figcaption><b>Full version control.</b> GraphSpace has an integrated and full-featured VCS. Branches and commits can be created, just like Git.</figcaption>
 </figure>
-<figure>
+<figure class="solo">
 <img src="media/transformer.jpg" alt="A transformer built in GraphSpace" loading="lazy">
 <figcaption>A transformer built in GraphSpace.</figcaption>
 </figure>
