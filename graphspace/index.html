@@ -18,6 +18,15 @@ figcaption { font-size: 14px; }
   .showcase { grid-template-columns: 1fr; }
   .showcase > figure:last-child:nth-child(odd) { width: auto; justify-self: stretch; }
 }
+.slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: thin; background: #2b2b2b; }
+.slides img { flex: 0 0 100%; width: 100%; aspect-ratio: 16 / 9; margin: 0; scroll-snap-align: start; }
+.deck-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 0.4em 0 0.3em; font-size: 14px; }
+.deck-nav[hidden] { display: none; }
+.deck-nav .count { min-width: 4.5em; text-align: center; }
+.deck-nav button { font: inherit; font-size: 20px; line-height: 1; padding: 2px 12px 4px; color: #000; background: #fff; border: 1px solid #999; border-radius: 3px; cursor: pointer; }
+.deck-nav button:disabled { opacity: 0.35; cursor: default; }
+.pages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 0.5em; }
+.pages img { width: 100%; margin: 0; border: 1px solid #ccc; box-sizing: border-box; }
 iframe.video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; margin: 0 auto 0.5em; }
 h3.u { font-size: 1em; font-weight: normal; text-decoration: underline; margin: 1.5em 0 0; }
 h3.u + p { margin-top: 0; }
@@ -143,6 +152,47 @@ h3.u + p { margin-top: 0; }
 
 <p>Once the basic platform was live and operational, it was now time to seek investor funding. One of the most important things that I learned over the course of the project was to always create a base of knowledge before jumping into anything; understand how the system you’re about to interact with works as much as possible before taking any action. I read the book <a href="https://venturedeals.com/">Venture Deals: Be Smarter Than Your Lawyer and Venture Capitalist</a>. <span class="note">This book was helpful for understanding how deals are formed and structured, but for me at the time I needed something that would break me out of assumptions that I was making that were non-obvious. The same problem happens with ‘founder’ podcasts. The information is useless to someone in my position - trying to start a company but has no idea how. In fact the information is not only useless, but in my case it was actively harmful, as it also fuels cognitive biases. ‘Work harder’, ‘embrace the struggle’, being a lonely programmer, that translated to ‘code more’ or worse, ‘add more features’. It’s appealing because it’s from people who were in the position I wanted to be in. But I really just needed to be convinced to thoroughly test the idea against reality.</span> This led me to create a pitch deck, an executive summary, and a basic email outline that I could send to VCs.</p>
 
+<figure class="deck">
+<div class="slides" tabindex="0" role="region" aria-label="Pitch deck, 25 slides">
+<img src="media/deck/01.jpg" alt="Slide 1: GraphSpace: Effortless AI" width="1440" height="810">
+<img src="media/deck/02.jpg" alt="Slide 2: The Problem" width="1440" height="810">
+<img src="media/deck/03.jpg" alt="Slide 3: The Problem: what AI/ML students and developers reported" width="1440" height="810" loading="lazy">
+<img src="media/deck/04.jpg" alt="Slide 4: The Solution" width="1440" height="810" loading="lazy">
+<img src="media/deck/05.jpg" alt="Slide 5: Example - Transformer" width="1440" height="810" loading="lazy">
+<img src="media/deck/06.jpg" alt="Slide 6: Example - Transformer (in code)" width="1440" height="810" loading="lazy">
+<img src="media/deck/07.jpg" alt="Slide 7: v1.0" width="1440" height="810" loading="lazy">
+<img src="media/deck/08.jpg" alt="Slide 8: v1.0" width="1440" height="810" loading="lazy">
+<img src="media/deck/09.jpg" alt="Slide 9: v1.0" width="1440" height="810" loading="lazy">
+<img src="media/deck/10.jpg" alt="Slide 10: Prototype - Building a Model" width="1440" height="810" loading="lazy">
+<img src="media/deck/11.jpg" alt="Slide 11: Prototype - Training" width="1440" height="810" loading="lazy">
+<img src="media/deck/12.jpg" alt="Slide 12: Prototype - Importing and Manipulating" width="1440" height="810" loading="lazy">
+<img src="media/deck/13.jpg" alt="Slide 13: Prototype - Creating Parameters" width="1440" height="810" loading="lazy">
+<img src="media/deck/14.jpg" alt="Slide 14: Prototype - Arrays" width="1440" height="810" loading="lazy">
+<img src="media/deck/15.jpg" alt="Slide 15: Prototype" width="1440" height="810" loading="lazy">
+<img src="media/deck/16.jpg" alt="Slide 16: Prototype" width="1440" height="810" loading="lazy">
+<img src="media/deck/17.jpg" alt="Slide 17: Additional Benefits" width="1440" height="810" loading="lazy">
+<img src="media/deck/18.jpg" alt="Slide 18: Validation" width="1440" height="810" loading="lazy">
+<img src="media/deck/19.jpg" alt="Slide 19: Market" width="1440" height="810" loading="lazy">
+<img src="media/deck/20.jpg" alt="Slide 20: Competition" width="1440" height="810" loading="lazy">
+<img src="media/deck/21.jpg" alt="Slide 21: Business Roadmap" width="1440" height="810" loading="lazy">
+<img src="media/deck/22.jpg" alt="Slide 22: Business Roadmap (cont.)" width="1440" height="810" loading="lazy">
+<img src="media/deck/23.jpg" alt="Slide 23: About Me" width="1440" height="810" loading="lazy">
+<img src="media/deck/24.jpg" alt="Slide 24: Ask" width="1440" height="810" loading="lazy">
+<img src="media/deck/25.jpg" alt="Slide 25: Contact" width="1440" height="810" loading="lazy">
+</div>
+<div class="deck-nav" hidden><button type="button" data-dir="-1" aria-label="Previous slide">‹</button><span class="count" aria-live="polite">1 / 25</span><button type="button" data-dir="1" aria-label="Next slide">›</button></div>
+<figcaption>The pitch deck (<a href="media/pitch_deck.pdf">PDF</a>).</figcaption>
+</figure>
+
+<figure>
+<div class="pages">
+<a href="media/executive_summary.pdf#page=1"><img src="media/summary/1.jpg" alt="Executive summary, page 1" width="480" height="622" loading="lazy"></a>
+<a href="media/executive_summary.pdf#page=2"><img src="media/summary/2.jpg" alt="Executive summary, page 2" width="480" height="622" loading="lazy"></a>
+<a href="media/executive_summary.pdf#page=3"><img src="media/summary/3.jpg" alt="Executive summary, page 3" width="480" height="622" loading="lazy"></a>
+</div>
+<figcaption>The executive summary (<a href="media/executive_summary.pdf">PDF</a>).</figcaption>
+</figure>
+
 <p>I was pretty proud of these. I worked hard and thought they looked good and checked all the boxes. I made a list of VCs and their emails and sent them the pitch deck and executive summary. No one got back to me of course. <span class="note">In the state that GraphSpace was in or even could be in, it would be uninvestible. Obviously, I was completely oblivious to this at the time. My mind was latching on anything that it could to convince myself that it was still a good idea. I guess I was subconsciously thinking that since I worked so hard on it and ‘sacrificed’ so much I was entitled to some reward</span></p>
 
 <p>I also incorporated it as a Delaware C Corp through a platform called <a href="https://www.angellist.com/">angelslist</a>. That way I could set up the legal structure of the company and give myself shares. I also applied to y combinator twice, and made a video to help explain the platform.</p>
@@ -198,5 +248,20 @@ When does it make sense to think under a power-law framework (high risk, high re
 
 <p>My main take away is this:<br>
 Success is making the right decision in terms of <em>process</em>, with less regard for the actual outcome of that decision. This puts emphasis on acting in the best way possible with the available information/resources and in accordance with a system or set of principles.</p>
+<script>
+document.querySelectorAll('.deck').forEach(function (deck) {
+  var strip = deck.querySelector('.slides'), nav = deck.querySelector('.deck-nav');
+  var count = nav.querySelector('.count'), prev = nav.querySelector('[data-dir="-1"]'), next = nav.querySelector('[data-dir="1"]');
+  var n = strip.children.length;
+  function at() { return Math.round(strip.scrollLeft / strip.clientWidth); }
+  function update() { var i = at(); count.textContent = (i + 1) + ' / ' + n; prev.disabled = i <= 0; next.disabled = i >= n - 1; }
+  function go(d) { strip.scrollTo({ left: Math.max(0, Math.min(n - 1, at() + d)) * strip.clientWidth }); }
+  prev.addEventListener('click', function () { go(-1); });
+  next.addEventListener('click', function () { go(1); });
+  strip.addEventListener('scroll', update, { passive: true });
+  nav.hidden = false;
+  update();
+});
+</script>
 </body>
 </html>
