@@ -10,12 +10,14 @@ h2 { font-size: 1em; font-weight: bold; margin: 2em 0 0.5em; }
 figure { margin: 1.5em 0; }
 figure img, figure video { display: block; max-width: 100%; height: auto; margin: 0 auto 0.5em; }
 figcaption { font-size: 14px; }
-.showcase { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em 16px; margin: 1.5em 0; }
+.showcase { --w: min(1100px, calc(100vw - 48px)); width: var(--w); margin: 1.5em 0 1.5em calc((100% - var(--w)) / 2); display: grid; grid-template-columns: 1fr 1fr; gap: 1.6em 24px; }
+@media (min-width: 1100px) { .showcase { --w: max(720px, min(1100px, calc(100vw - 400px))); } }
+@media (max-width: 540px) { .showcase { --w: 100%; } }
 .showcase figure { margin: 0; }
 .showcase > figure.lead { grid-column: 1 / -1; }
-.lead-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lead-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .lead figcaption { text-align: center; }
-.lead-pair.fit { display: flex; gap: 16px; align-items: flex-start; }
+.lead-pair.fit { display: flex; gap: 24px; align-items: flex-start; }
 .lead-pair.fit > img { flex: var(--ar) 1 0; min-width: 0; width: auto; height: auto; aspect-ratio: auto; }
 @media (max-width: 540px) {
   .lead-pair { grid-template-columns: 1fr; gap: 1.2em; }
@@ -138,7 +140,7 @@ h3.u + p { margin-top: 0; }
 <p>Another challenge was how values would be stored and transmitted. It’s simple and easy to store simple floats, but basically all of machine learning deals with arrays, matrices, and tensors, allowing for higher dimensional representations. So before, I changed the node ‘value’ field from a simple float to a pointer that would reference a serialized TensorFlow object (this would be in storage on the backend, and never be sent to the client). Later on, I would also create my own format using protobufs for storing multidimensional arrays (ndarrays) (TensorFlow can only serialize tensors, which are square and have the same size every dimension, e.g. 6x6x6, whereas ndarrays are rectangular, e.g. 4x3x6)</p>
 
 <figure>
-<img src="media/tensor_vs_ndarray.png" alt="A 6x6x6 cube next to a 4x3x6 box" loading="lazy">
+<img style="max-width:340px" width="940" height="561" src="media/tensor_vs_ndarray.png" alt="A 6x6x6 cube next to a 4x3x6 box" loading="lazy">
 <figcaption>The two shapes from the text: 6×6×6 and 4×3×6.</figcaption>
 </figure>
 
