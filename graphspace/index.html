@@ -44,6 +44,12 @@ figcaption { font-size: 14px; }
 iframe.video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; margin: 0 auto 0.5em; }
 h3.u { font-size: 1em; font-weight: normal; text-decoration: underline; margin: 1.5em 0 0; }
 h3.u + p { margin-top: 0; }
+h3.u + p.quote { margin-top: 1em; }
+p.tight { margin-bottom: 0; }
+ul.dash { list-style: none; padding-left: 2.6em; margin: 0; }
+ul.dash li { text-indent: -1.1em; }
+ul.dash li::before { content: "-"; display: inline-block; width: 1.1em; text-indent: 0; }
+ul.dash + p.tight { margin-top: 0; }
 .note { display: block; margin: 0.5em 0; padding: 4px 10px; border-left: 3px solid #f1c232; background: #fff8e1; font-size: 14px; color: #333; }
 @media (min-width: 1240px) {
   .note { float: right; clear: right; width: 230px; margin: 0 -270px 0.5em 0; padding: 2px 0 2px 10px; background: none; }
@@ -57,7 +63,7 @@ h3.u + p { margin-top: 0; }
 <p>GraphSpace was a startup I tried to build after graduating college.<br>
 This was all when AI was near useless for coding, so little AI was used in its development.<br>
 The goal was to create a visual platform for building and deploying machine learning models.<br>
-If short on time, just read the <b>bolder lettering.</b></p>
+If short on time, just read the <b>bold lettering.</b></p>
 
 
 <div class="showcase">
@@ -235,9 +241,11 @@ If short on time, just read the <b>bolder lettering.</b></p>
 
 <p>(note: this was written after the market making bot project)</p>
 
-<p>A person is a factory for making decisions. A quality product means attention given in each step of the production line.</p>
+<p><b>A person is a factory for making decisions. A quality product means attention is given in each step of the production line.</b></p>
 
 <p>In an effort to understand how my decision making was flawed over the course of the project I looked into my own psychology and the environment in which I was operating. This led to a monumental upgrade to my brain and my modelling of reality.</p>
+
+<h3 class="u" id="stories">Stories</h3>
 
 <p>The biggest realization was that most of the error was from my mind’s unconscious desire to create a coherent story of what a successful startup looks like. It pulled from a small sample of a highly biased distribution (the startups that we all know about and whose founders regularly appear in the news). <b>Out of all of the startups that have ever been attempted, it’s the stories of these few that are broadcasted and are most likely to enter one’s mind. This <a href="https://en.wikipedia.org/wiki/Selection_bias">selection bias</a> creates a heavily skewed version of reality.</b></p>
 
@@ -263,11 +271,39 @@ If short on time, just read the <b>bolder lettering.</b></p>
 
 <p>Additionally, success stories feel good to believe. This leads to a propensity towards less information and avoidance of stories or information that could break that hopeful narrative, even though that could actually improve the odds of success. Additionally, avoidance of information is perpetuated by <b>the fact that the most useful information, stories of failure, are abundant</b> and diffuse, and therefore not an obvious source of information to seek out since success stories are vivid, coherent, and constantly talked about (also skewing how probable that outcome seems to be).</p>
 
-<h3 class="u" id="conclusion">Conclusion</h3>
-<p>When does it make sense to take a risk? Sacrificing years of your life for something with extremely slim chances of success but potentially a monumental upside might work out from an expected value perspective, but life is short and <b>low-probability, high-reward undertakings should be approached with caution.</b></p>
+<h3 class="u" id="attachment-avoidance-and-fear">Attachment, Avoidance, and Fear</h3>
 
+<p class="quote">I must not fear. Fear is the mind-killer. Fear is the little-death that brings total obliteration.<br>
+— Frank Herbert, <em>Dune</em></p>
+
+<p class="tight"><b>Attachment to a person, a product idea, a self-narrative, etc., skew decisions as there’s an innate avoidance/fear of anything that could break that attachment</b>. For example, I was very nervous about showing off the prototype of GraphSpace to potential users, as I was afraid that they wouldn’t like it. Especially since we did not do enough reality-testing of the idea at the very start and we had already put a year into the development of the prototype. Obviously, I learned a huge lesson here: <b>test early, frontload pain, don’t get attached</b>. Never start with a conclusion and find evidence to back it up, start with the evidence and form a conclusion from that. Once you get attached to an idea, it’s easy to be swayed by emotion to avoid any mental pain that might come from reality-testing that idea, usually by avoiding and delaying it; setting yourself up for failure.<br>
+I find it beneficial to imagine myself controlling a videogame avatar from a third person perspective, going from networking events, to pitchings, to meetings, etc., taking actions with zero social friction, no fears of how me or my questions/ideas come across, and a perfect ability to connect with anyone and gain any information from them (all in the context of a solid, granular plan to achieve some ultimate goal).<br>
+This is not far from what’s actually possible; <b>it’s just that evolutionary remnants from hunter-gatherer times constantly sway our actions and decisions (short, medium, and long term).</b><br>
+Or, similarly, looking at this from a reinforcement learning perspective, we have an agent (you or me) and the environment (the world). There’s an infinite number of things an agent can do or not do in this world, and there’s always a best option (given what information and resources you have access to). Obviously, this is ridiculous to actually attempt to be a perfectly rational agent (what’s the fun in that), but it’s a good thought experiment to see what you would do if you weren’t so confined by yourself.<br>
+This happened a lot throughout the course of GraphSpace, where there was an emotion-driven push away from things that were extremely important to our goal:</p>
+<ul class="dash">
+<li>thoroughly testing mockups and prototypes against target customers</li>
+<li>asking questions that could really help but could be embarrassing</li>
+<li>researching competitors</li>
+<li>researching similar startups that failed</li>
+<li>objectively looking at how long something will take (watch out for the planning fallacy)</li>
+<li>thoroughly analyzing potential paths that lead to failure</li>
+<li>setting up meetings with people that could provide valuable insights, but might disagree with the idea</li>
+<li>pivoting after being wrong</li>
+</ul>
+<p class="tight">The avoidance of pain, including mental pain, are extremely important for the brain. And a lot of the time you don’t know when you’re making decisions in the context of this avoidance. The solution is to act defensively, knowing that your brain has this bias to fool itself:</p>
+<ul class="dash">
+<li><b>go into it expecting to be wrong to some degree</b></li>
+<li><b>don’t avoid information; ask questions, do research, create quick mockups and get opinions</b></li>
+<li><b>create premortems (research/brainstorm potential failure paths)</b></li>
+<li><b>block out time for playing the critic to analyze what you could be doing wrong every once in a while</b></li>
+<li><b>track divergence between what you plan on doing and what you actually end up doing</b></li>
+</ul>
+<p class="tight">On this last point, it’s easy to talk about doing or not doing something, but actually acting in that way, in real life, is another story. I remember reading The Lean Startup, and creating a diagram of the quick iteration loop that was suggested in the book and putting it on my wall. I unknowingly completely disregarded what it was saying, but the whole time I thought what I was doing was justified just because it was there. Just because you know about some process or method that supposedly leads to a successful outcome, means nothing if you’re not actually implementing it. In a similar vein, it feels good to think you have some special view or knowledge of the world that gives you some advantage without any evidence or real justification. I’ve found myself unknowingly manufacturing confidence in plans or ideas, usually along the lines of ‘Because I’ve read the Learn Startup, I know what I’m doing and the probability of success is much higher’, which could be true, but only if there’s actual implementation. The sole act of talking to someone or reading a book doesn’t guarantee anything.</p>
+
+<h3 class="u" id="conclusion">Conclusion</h3>
 <p><b>Make attempts quickly and frequently.<br>
-Don’t let a failure take longer than it needs to.<br>
+Don’t let mistakes take longer than they need to.<br>
 Learn and form connections.</b></p>
 
 <p><b>Success is making the right decision in terms of <em>process</em>, not of outcome.</b></p>
