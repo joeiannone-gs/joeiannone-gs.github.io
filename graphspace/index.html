@@ -169,15 +169,9 @@ If short on time, just read the <b>bold lettering.</b></p>
 
 <p>The problem then became sending updates to the client. When a graph is being run, TensorFlow is managing dataflow between the CPU, RAM, and the GPU. This means that in order to see what’s going on (like what the value of a certain parameter is or what the loss was on the most recent pass), the program needs a way to peek without interrupting the training. I initially tried to use the native TensorFlow function, tf.py_functions, as this would pause the training in order to run standard python code like sending a websocket event to the client for variable values and loss. But this meant it would run on every forward pass, which completely destroyed performance. I thought that maybe a polling-type design pattern would be better. Here, there would be two processes: the main process and a process that managed training. The training process would write updates to a <a href="https://docs.python.org/3/library/multiprocessing.shared_memory.html">shared buffer</a>, while the main process would read it on an interval and send websockets events to the client. This solved the problem, as there were no longer any interruptions of the training loop. In terms of the training speed itself, there was still a lot that could be done. TensorFlow’s default computation graph is not optimized in any significant way and there’s little execution optimization. While researching how to optimize things further, I stumbled upon <a href="https://blog.tensorflow.org/2018/11/pushing-limits-of-gpu-performance-with-xla.html">this article</a>, which outlined how to use <a href="https://openxla.org/xla">Accelerated Linear Algebra</a> (XLA) for TensorFlow. By default, each operation in a TensorFlow graph is sent to the GPU one at a time, but with XLA, the operations are ‘fused’ so many operations can be calculated in one go before any data needs to be moved out of the GPU. The computation graph is compiled into an extremely optimized version that takes into account the specific hardware, operations, and data, leading to a significant speed up. With the MLP model, the speedup was about 3x-4x.</p>
 
-<h2 id="dead-features" style="font-weight:normal">Dead Features</h2>
-
-<ul>
-
-<li>Self-node: a node that contains itself. Basically a recursive function in graph form. It’s an abstraction-node (the original node) that contains a node that’s a copy of the original node. <em>It’s nodes all the way down</em>. This was a cool idea, but didn’t have any real usefulness for ML.</li>
-
-<li>Conditional paths: if/else statements like inequalities. The dataflow goes one way if true, the other way if false. This got too close to trying to make a ‘visual programming language’ which many have tried to do and all have failed.</li>
-
-</ul>
+<p id="dead-features" style="margin-top:2em">Dead Features -<br>
+Self-node: a node that contains itself. Basically a recursive function in graph form. It’s an abstraction-node (the original node) that contains a node that’s a copy of the original node. <em>It’s nodes all the way down</em>. This was a cool idea, but didn’t have any real usefulness for ML.<br>
+Conditional paths: if/else statements like inequalities. The dataflow goes one way if true, the other way if false. This got too close to trying to make a ‘visual programming language’ which many have tried to do and all have failed.</p>
 
 <h2 id="business">Business</h2>
 
