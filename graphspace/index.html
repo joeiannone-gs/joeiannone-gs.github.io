@@ -72,26 +72,26 @@ If short on time, just read the <b>bold lettering.</b></p>
 <img src="media/mlp_diagram.jpg" alt="Diagram of a feed-forward neural network: an input layer, two hidden layers and an output layer, each neuron connected to every neuron in the next layer" width="1024" height="854" style="background:#f2f3f5">
 <video src="media/build.mp4" poster="media/build.jpg" autoplay muted loop playsinline preload="none" aria-label="Building a multi-layer perceptron in GraphSpace"></video>
 </div>
-<figcaption>GraphSpace makes it possible to build real, working AI/ML models visually. This is an example of a simple neural network being built within the platform.</figcaption>
+<figcaption><b>This is an example of a simple neural network being built within the platform.</b></figcaption>
 </figure>
 <figure>
 <video src="media/mlp.mp4" poster="media/mlp.jpg" autoplay muted loop playsinline preload="none" aria-label="A neural network training in GraphSpace, with each parameter's value shown"></video>
-<figcaption>The value of each parameter in the network can be viewed as the network trains. In this example, the network is being trained to recognize handwritten digits using the <a href="https://en.wikipedia.org/wiki/MNIST_database">MNIST dataset</a>.</figcaption>
+<figcaption>The value of each parameter in the network can be viewed as the network learns. In this example, the network is being trained to recognize handwritten digits using the <a href="https://en.wikipedia.org/wiki/MNIST_database">MNIST dataset</a>.</figcaption>
 </figure>
 <figure>
 <video src="media/import.mp4" poster="media/import.jpg" autoplay muted loop playsinline preload="none" aria-label="Uploading a HuggingFace tensor file and slicing it"></video>
-<figcaption>A <a href="https://huggingface.co/">HuggingFace</a> tensor file is uploaded and a slice operation is then performed, allowing the user to see exactly what that slice will look like.</figcaption>
+<figcaption>A <a href="https://huggingface.co/">HuggingFace</a> SafeTensor file is uploaded and a slice operation is then performed, allowing the user to see exactly what that slice will look like.</figcaption>
 </figure>
 <figure class="lead">
 <div class="lead-pair">
 <video src="media/array.mp4" poster="media/array.jpg" autoplay muted loop playsinline preload="none" aria-label="Viewing an array"></video>
 <video src="media/tensor.mp4" poster="media/tensor.jpg" autoplay muted loop playsinline preload="none" aria-label="Viewing a tensor"></video>
 </div>
-<figcaption>Data of any format can be viewed. Multidimensional arrays or tensors, with any possible shape.</figcaption>
+<figcaption>Data of any format can be viewed. Multidimensional arrays or tensors, with any possible shape (however irregular).</figcaption>
 </figure>
 <figure>
 <video src="media/instant.mp4" poster="media/instant.jpg" autoplay muted loop playsinline preload="none" aria-label="Running a model instantly"></video>
-<figcaption>Models are run near instantly since they are pre-loaded into RAM, and modified as edits are made on the frontend.</figcaption>
+<figcaption>Models are run near instantly since they are pre-loaded into RAM and modified as edits land from the frontend.</figcaption>
 </figure>
 <figure>
 <video src="media/vcs.mp4" poster="media/vcs.jpg" autoplay muted loop playsinline preload="none" aria-label="Committing and branching"></video>
@@ -102,7 +102,7 @@ If short on time, just read the <b>bold lettering.</b></p>
 <img src="media/transformer_paper.png" style="--ar:0.6789" width="1000" height="1473" alt="The Transformer architecture diagram from Attention Is All You Need: encoder and decoder stacks of multi-head attention and feed-forward layers" loading="lazy">
 <img style="--ar:1.7713" width="1456" height="822" src="media/transformer.jpg" alt="A transformer built in GraphSpace" loading="lazy">
 </div>
-<figcaption>The ultimate goal was to have it possible to build a transformer/GPT in the platform. For example, this one here from the seminal <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a> paper.</figcaption>
+<figcaption>The ultimate goal was to have it possible to build a transformer/GPT in the platform. For example, this first transformer from the seminal <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a> paper.</figcaption>
 </figure>
 </div>
 
@@ -152,7 +152,7 @@ If short on time, just read the <b>bold lettering.</b></p>
 <figcaption>The two shapes from the text: 6×6×6 and 4×3×6.</figcaption>
 </figure>
 
-<p>And now instead of storing everything as files in a folder on the backend, I would change it to an <a href="https://www.sqlite.org/">SQLite</a> database. This would vastly improve retrieval speed and allow for a much more intuitive way to get data and send it to the client. And since SQLite supports binary blob storage, the graphs, nodes, edges, tensors, ndarrays, could all be stored in the same database, vastly simplifying the pipeline for retrieving and modifying graphs.</p>
+<p>And now instead of storing everything as files in a folder on the backend, I would change it to an <a href="https://www.sqlite.org/">SQLite</a> database. This would vastly improve retrieval speed and allow for a much more intuitive way to get data and send it to the client. And since SQLite supports binary blob storage, the graphs, nodes, edges, tensors, ndarrays, could all be stored in the same database, vastly simplifying the pipeline for retrieving and modifying graphs. <span class="note">Either way there was still a lot of premature optimization here, I probably should have stuck with the simple JSON setup and moved on despite how cool the engineering was. It just took way too long.</span></p>
 
 <p>Now it was time to build out the commit tree feature. The goal here was a panel that could be panned/zoomed, showing the past history of a user’s graph/project. Creating a commit would basically be a checkpoint that the user could come back to in the project’s history and creating a branch would allow the user to have multiple versions of the project. This ended up being a very complicated feature, and since I had an unhealthy obsession with optimization, it took a while. The foundation of this is how differences were encoded between two graphs. This was important for sending updates to the backend (so the backend could maintain an identical copy of the version that the client was working on) and it was important for encoding each commit (e.g. starting with the initial graph, and recording each batch of differences all the way up to the current graph). I broke this down into all the different ways a graph could be changed: a node could be added/deleted, an edge could be added/deleted, the property of a node could be modified (e.g. its value changed), and an edge could have either of the nodes it connects changed.</p>
 
@@ -175,7 +175,7 @@ Conditional paths: if/else statements like inequalities. The dataflow goes one w
 
 <h2 id="business">Business</h2>
 
-<p>Once the basic platform was live and operational, it was now time to seek investor funding. One of the most important things that I learned over the course of the project was to always create a base of knowledge before jumping into anything; <b>understand how the system you’re about to interact with works before taking any action</b>. I read the book <a href="https://venturedeals.com/">Venture Deals: Be Smarter Than Your Lawyer and Venture Capitalist</a>. <span class="note">This book was helpful for understanding how deals are formed and structured, but for me at the time I needed something that would break me out of assumptions that I was making that were non-obvious. The same problem happens with ‘founder’ podcasts. The information is useless to someone in my position - trying to start a company but has no idea how. In fact the information is not only useless, but in my case it was actively harmful, as it also fuels cognitive biases. ‘Work harder’, ‘embrace the struggle’, being a lonely programmer, that translated to ‘code more’ or worse, ‘add more features’. It’s appealing because it’s from people who were in the position I wanted to be in. But I really just needed to be convinced to thoroughly test the idea against reality.</span> This led me to create a pitch deck, an executive summary, and a basic email outline that I could send to VCs.</p>
+<p>Once the basic platform was live and operational, it was now time to seek investor funding. One of the most important things that I learned over the course of the project was to always create a base of knowledge before jumping into anything; <b>understand how the system you’re about to interact with works before taking any action</b>. I read the book <a href="https://venturedeals.com/">Venture Deals: Be Smarter Than Your Lawyer and Venture Capitalist</a>. <span class="note">This book was helpful for understanding how deals are formed and structured, but it wasn’t super useful for me given the position I was in, as I needed something that explained what the company needed to look like to actually get an investment. Similarly, I would listen to a lot of ‘founder’ podcasts, which had a similar problem where the information was not super useful or actionable and in this case it was probably actively harmful. ‘Work harder’, ‘embrace the struggle’, etc.. Spending most of my time programming, that translated to ‘code more’ or worse, ‘add more features’. But it was appealing because it’s people who were in the position I wanted to be in.</span> This led me to create a pitch deck, an executive summary, and a basic email outline that I could send to VCs.</p>
 
 <figure class="deck">
 <div class="slides" tabindex="0" role="region" aria-label="Pitch deck, 25 slides">
@@ -293,7 +293,7 @@ This happened a lot throughout the course of GraphSpace, where there was an emot
 <li>block out time for playing the critic to analyze what you could be doing wrong every once in a while</li>
 <li>track divergence between what you plan on doing and what you actually end up doing</li>
 </ul>
-<p class="tight"><b>There’s a lot of things that can serve as drop-in replacements for action (or the thing you should be doing).</b> In fact I’m probably guilty of this right now as I’m writing this. It’s easy to talk about doing or not doing something, but actually implementing that in real life is another story. I remember reading The Lean Startup, and creating a diagram of the quick iteration loop that was suggested in the book and putting it on my wall. I unknowingly completely disregarded what it was saying (day to day it felt like I was doing the right thing, but in hindsight I was doing the complete opposite), but the whole time I thought what I was doing was justified just because it was there. <b>Just because you know about some process or method that supposedly leads to a successful outcome means nothing if you’re not actually implementing it</b>, so checking yourself to ensure you’re doing what you need to be doing is essential. In a similar vein, it feels good to think you have some special view or knowledge of the world that gives you some advantage without any actual evidence or real justification. I’ve found myself unknowingly manufacturing confidence in plans or ideas, usually along the lines of ‘Because I’ve read Zero to One, I know what I’m doing and the probability of success is much higher’, which could be true, but only if there’s actual implementation (which needs tracking and reflection to be sure). The sole act of reading a book doesn’t guarantee anything.</p>
+<p class="tight"><b>There’s a lot of things that can serve as drop-in replacements for action (or the thing you should be doing).</b> In fact I’m probably guilty of this right now as I’m writing this. It’s easy to talk about doing or not doing something, but actually implementing that in real life is another story. I remember reading The Lean Startup, and creating a diagram of the quick iteration loop that was suggested in the book and putting it on my wall. I unknowingly completely disregarded what it was saying (day to day it felt like I was doing the right thing, but in hindsight I was doing the complete opposite), but the whole time I thought what I was doing was justified just because it was there. <b>Just because you know about some process or method that supposedly leads to a successful outcome means nothing if you’re not actually implementing it</b>, so checking yourself to ensure you’re doing what you need to be doing is essential. In a similar vein, it feels good to think you have some special view or knowledge of the world that gives you some advantage without any actual evidence or real justification. I’ve found myself unknowingly manufacturing confidence in plans or ideas, usually along the lines of ‘Because I’ve read Zero to One, I know what I’m doing and the probability of success is much higher’, which could be true, but only if there’s actual implementation (which needs metrics and reflection to be sure). The sole act of reading a book doesn’t guarantee anything.</p>
 
 <h3 class="u" id="conclusion">Conclusion</h3>
 <p>Make attempts quickly and frequently.<br>
